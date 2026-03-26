@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>広告監視ダッシュボード</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background-color: #f4f7f6;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #0f4c81;
+            color: white;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+    <h1>広告監視ダッシュボード (テスト)</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>会社名</th>
+                <th>消化金額</th>
+                <th>CPA</th>
+                <th>LTV</th>
+                <th>目標CPA (LTV10%)</th>
+                <th>限界CPA (LTV20%)</th>
+            </tr>
+        </thead>
+        <tbody id="data-table-body">
+            <tr>
+                <td colspan="6">データを読み込み中...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        // ★ここを書き換えます★
+        // ステップ1で取得したURLとキーを、シングルクォーテーション(' ')の中に貼り付けてください。
+        const SUPABASE_URL = 'https://mfnsggsmsjerjugppfwh.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_dHM5W8jcyuYxNVMY_-Zfhg_BBQ5YZ1S';
+
+        // Supabaseに接続
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // データを取得して画面に表示する機能
+        async function fetchData() {
+            // ad_metricsテーブルからデータを取得
+            const { data, error } = await supabase.from('ad_metrics').select('*');
+
+            if (error) {
+                console.error('エラー:', error);
+                document.getElementById('data-table-body').innerHTML = '<tr><td colspan="6">データの読み込みに失敗しました。</td></tr>';
+                return;
+            }
+
+            const tbody = document.getElementById('data-table-body');
+            tbody.innerHTML = ''; // 「読み込み中...」を消す
+
+            // データが無い場合の処理
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6">まだデータがありません。Supabaseでダミーデータを追加してください。</td></tr>';
+                return;
+            }
+
+            // 取得したデータを表に追加
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.company_name}</td>
+                    <td>${row.spend.toLocaleString()}円</td>
+                    <td>${row.cpa.toLocaleString()}円</td>
+                    <td>${row.ltv.toLocaleString()}円</td>
+                    <td>${row.target_cpa.toLocaleString()}円</td>
+                    <td>${row.limit_cpa.toLocaleString()}円</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ページを開いたときに実行
+        fetchData();
+    </script>
+</body>
+
+</html>

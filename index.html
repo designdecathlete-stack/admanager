@@ -270,7 +270,8 @@
             const handleSort = (key) => setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
 
             const handleSaveEdit = (client, field) => {
-                const num = parseInt(editingInput.value.replace(/,/g, ''));
+                const valStr = String(editingInput.value);
+                const num = parseInt(valStr.replace(/,/g, ''));
                 if (!isNaN(num)) onUpdateClient({ ...client, [field]: num });
                 setEditingInput({ id: null, field: null, value: "" });
             };
@@ -440,7 +441,7 @@
             "リンク先": ["遷移先URL変更", "UTMパラメータ追加・変更", "遷移先停止/差し替え", "その他"]
         };
 
-        const DashboardDetail = ({ client, onBack, onUpdateClient }) => {
+        const DashboardDetail = ({ client, onBack, onUpdateClient, onDeleteClient }) => {
             const [data, setData] = useState(useMemo(() => generateClientData(client), [client]));
             const [expandedRows, setExpandedRows] = useState(new Set([`${client.id}-c1`, `${client.id}-as1`]));
             const [activeTab, setActiveTab] = useState("dashboard");
@@ -651,13 +652,80 @@
 
             const [editHistoryId, setEditHistoryId] = useState(null);
             const [editHistoryForm, setEditHistoryForm] = useState(null);
-            const handleDeleteHistory = (id) => { if (window.confirm('この履歴を削除しますか？')) setHistoryLogs(prev => prev.filter(l => l.id !== id)); };
-            const handleSaveHistory = () => { setHistoryLogs(prev => prev.map(l => l.id === editHistoryForm.id ? editHistoryForm : l)); setEditHistoryId(null); };
+            const handleDeleteHistory = async (id) => {
+                if (window.confirm('この履歴を削除しますか？')) {
+                    if (supabase && !("" + client.id).startsWith("cl")) {
+                        try {
+                            const { error } = await supabase.from('change_logs').delete().eq('id', id);
+                            if (error) throw error;
+                            setDbHistoryLogs(prev => prev.filter(l => l.id !== id));
+                        } catch (e) {
+                            console.error("Error deleting log", e);
+                            alert("削除に失敗しました。");
+                        }
+                    } else {
+                        setHistoryLogs(prev => prev.filter(l => l.id !== id));
+                    }
+                }
+            };
+            const handleSaveHistory = async () => {
+                if (supabase && !("" + client.id).startsWith("cl")) {
+                    try {
+                        const { error } = await supabase.from('change_logs').update({
+                            value_before: editHistoryForm.before,
+                            value_after: editHistoryForm.after,
+                            memo: editHistoryForm.detail
+                        }).eq('id', editHistoryForm.id);
+                        if (error) throw error;
+                        setDbHistoryLogs(prev => prev.map(l => l.id === editHistoryForm.id ? editHistoryForm : l));
+                    } catch (e) {
+                        console.error("Error updating log", e);
+                        alert("保存に失敗しました。");
+                    }
+                } else {
+                    setHistoryLogs(prev => prev.map(l => l.id === editHistoryForm.id ? editHistoryForm : l));
+                }
+                setEditHistoryId(null);
+            };
 
             const [editMinuteId, setEditMinuteId] = useState(null);
             const [editMinuteForm, setEditMinuteForm] = useState(null);
-            const handleDeleteMinute = (id) => { if (window.confirm('この議事録を削除しますか？')) setMinutesLogs(prev => prev.filter(l => l.id !== id)); };
-            const handleSaveMinute = () => { setMinutesLogs(prev => prev.map(l => l.id === editMinuteForm.id ? editMinuteForm : l)); setEditMinuteId(null); };
+            const handleDeleteMinute = async (id) => {
+                if (window.confirm('この議事録を削除しますか？')) {
+                    if (supabase && !("" + client.id).startsWith("cl")) {
+                        try {
+                            const { error } = await supabase.from('meeting_notes').delete().eq('id', id);
+                            if (error) throw error;
+                            setDbMinutesLogs(prev => prev.filter(l => l.id !== id));
+                        } catch (e) {
+                            console.error("Error deleting minute", e);
+                            alert("削除に失敗しました。");
+                        }
+                    } else {
+                        setMinutesLogs(prev => prev.filter(l => l.id !== id));
+                    }
+                }
+            };
+            const handleSaveMinute = async () => {
+                if (supabase && !("" + client.id).startsWith("cl")) {
+                    try {
+                        const { error } = await supabase.from('meeting_notes').update({
+                            meeting_date: editMinuteForm.date,
+                            title: editMinuteForm.title,
+                            url: editMinuteForm.url,
+                            summary: editMinuteForm.detail
+                        }).eq('id', editMinuteForm.id);
+                        if (error) throw error;
+                        setDbMinutesLogs(prev => prev.map(l => l.id === editMinuteForm.id ? editMinuteForm : l));
+                    } catch (e) {
+                        console.error("Error updating minute", e);
+                        alert("保存に失敗しました。");
+                    }
+                } else {
+                    setMinutesLogs(prev => prev.map(l => l.id === editMinuteForm.id ? editMinuteForm : l));
+                }
+                setEditMinuteId(null);
+            };
 
             const toggleExpand = (id) => {
                 const newSet = new Set(expandedRows);
@@ -1229,7 +1297,8 @@
 
                             {/* 1. 基本情報 */}
                             {activeInfoTab === 'basic' && (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     {/* Card 1: 担当者・連絡先 (Contacts) */}
                                     <Card className="p-5 border-slate-200 bg-white shadow-sm relative h-fit hover:shadow-md transition-shadow">
                                         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
@@ -1301,12 +1370,21 @@
                                             </div>
                                         </div>
                                     </Card>
+                                    </div>
+                                    
+                                    <div className="mt-10 pt-6 border-t border-red-100 flex justify-end">
+                                        <button onClick={() => onDeleteClient(client.id)} className="bg-white border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md font-medium text-sm flex items-center shadow-sm transition-colors cursor-pointer group">
+                                            <Icon name="Trash2" size={16} className="mr-2 group-hover:scale-110 transition-transform" />
+                                            このクライアントを完全に削除する
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
                             {/* 2. 集客リンク・SNS */}
                             {activeInfoTab === 'links' && (
-                                <div className="grid grid-cols-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <div className="grid grid-cols-1">
                                     {/* Card 5: Webサイト & 外部リンク (Web Links) */}
                                     <Card className="p-5 border-slate-200 bg-white shadow-sm relative h-fit hover:shadow-md transition-shadow">
                                         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
@@ -1338,12 +1416,21 @@
                                             ))}
                                         </div>
                                     </Card>
+                                    </div>
+                                    
+                                    <div className="mt-10 pt-6 border-t border-red-100 flex justify-end">
+                                        <button onClick={() => onDeleteClient(client.id)} className="bg-white border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md font-medium text-sm flex items-center shadow-sm transition-colors cursor-pointer group">
+                                            <Icon name="Trash2" size={16} className="mr-2 group-hover:scale-110 transition-transform" />
+                                            このクライアントを完全に削除する
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
                             {/* 3. 広告設定・KPI */}
                             {activeInfoTab === 'ad' && (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2">
                                     {/* Card 3: 広告設定 & KPI (Ad Platforms) */}
                                     <Card className="p-5 border-slate-200 bg-white shadow-sm relative h-fit hover:shadow-md transition-shadow">
                                         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
@@ -1376,12 +1463,21 @@
                                             </div>
                                         </div>
                                     </Card>
+                                    </div>
+                                    
+                                    <div className="mt-10 pt-6 border-t border-red-100 flex justify-end">
+                                        <button onClick={() => onDeleteClient(client.id)} className="bg-white border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md font-medium text-sm flex items-center shadow-sm transition-colors cursor-pointer group">
+                                            <Icon name="Trash2" size={16} className="mr-2 group-hover:scale-110 transition-transform" />
+                                            このクライアントを完全に削除する
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
                             {/* 4. クリエイティブ素材 */}
                             {activeInfoTab === 'creative' && (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    <div className="grid grid-cols-1 lg:grid-cols-2">
                                     {/* Card 4: クリエイティブ & 素材 (Creative) */}
                                     <Card className="p-5 border-slate-200 bg-white shadow-sm relative h-fit hover:shadow-md transition-shadow">
                                         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
@@ -1408,6 +1504,14 @@
                                             ))}
                                         </div>
                                     </Card>
+                                    </div>
+                                    
+                                    <div className="mt-10 pt-6 border-t border-red-100 flex justify-end">
+                                        <button onClick={() => onDeleteClient(client.id)} className="bg-white border border-red-200 text-red-600 hover:bg-red-50 px-4 py-2 rounded-md font-medium text-sm flex items-center shadow-sm transition-colors cursor-pointer group">
+                                            <Icon name="Trash2" size={16} className="mr-2 group-hover:scale-110 transition-transform" />
+                                            このクライアントを完全に削除する
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -1531,6 +1635,24 @@
                 }
             };
 
+            const handleDeleteClient = async (clientId) => {
+                if (window.confirm("本当にこのクライアントを完全に削除しますか？この操作は取り消せません。")) {
+                    if (supabase && !("" + clientId).startsWith("cl")) {
+                        try {
+                            const { error } = await supabase.from('clients').delete().eq('id', clientId);
+                            if (error) throw error;
+                        } catch(e) {
+                            console.error("Error deleting client", e);
+                            alert("削除に失敗しました。関連データが残っている可能性があります。");
+                            return;
+                        }
+                    }
+                    setClients(prev => prev.filter(c => c.id !== clientId));
+                    setSelectedClient(null);
+                    setView("clientList");
+                }
+            };
+            
             const handleUpdateClient = async (updatedClient) => {
                 setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
                 setSelectedClient(prev => prev && prev.id === updatedClient.id ? updatedClient : prev);
@@ -1588,7 +1710,7 @@
                     </aside>
                     <main className="flex-1 p-6 md:p-8 lg:p-10 max-w-7xl mx-auto w-full overflow-x-hidden">
                         {view === "clientList" && <ClientList clients={clients} onSelectClient={handleSelectClient} onAddNew={handleAddNew} onUpdateClient={handleUpdateClient} />}
-                        {view === "dashboard" && selectedClient && <DashboardDetail client={selectedClient} onBack={handleBackToList} onUpdateClient={handleUpdateClient} />}
+                        {view === "dashboard" && selectedClient && <DashboardDetail client={selectedClient} onBack={handleBackToList} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} />}
                         {view === "addClient" && <AddClientForm onSave={handleSaveNewClient} onCancel={handleBackToList} />}
                     </main>
                 </div>

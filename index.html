@@ -3,110 +3,1453 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>広告監視ダッシュボード</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            padding: 20px;
-            background-color: #f4f7f6;
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta広告 統合管理ダッシュボード</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        border: "hsl(var(--border))",
+                        input: "hsl(var(--input))",
+                        ring: "hsl(var(--ring))",
+                        background: "hsl(var(--background))",
+                        foreground: "hsl(var(--foreground))",
+                        primary: { DEFAULT: "hsl(222.2 47.4% 11.2%)", foreground: "hsl(210 40% 98%)" },
+                        secondary: { DEFAULT: "hsl(210 40% 96.1%)", foreground: "hsl(222.2 47.4% 11.2%)" },
+                        destructive: { DEFAULT: "hsl(0 84.2% 60.2%)", foreground: "hsl(210 40% 98%)" },
+                        muted: { DEFAULT: "hsl(210 40% 96.1%)", foreground: "hsl(215.4 16.3% 46.9%)" },
+                        accent: { DEFAULT: "hsl(210 40% 96.1%)", foreground: "hsl(222.2 47.4% 11.2%)" },
+                    }
+                }
+            }
         }
-
-        h1 {
-            color: #333;
-            font-size: 24px;
+    </script>
+    <style type="text/tailwindcss">
+        @layer base {
+        :root {
+          --background: 0 0% 100%;
+          --foreground: 222.2 84% 4.9%;
+          --card: 0 0% 100%;
+          --card-foreground: 222.2 84% 4.9%;
+          --popover: 0 0% 100%;
+          --popover-foreground: 222.2 84% 4.9%;
+          --primary: 222.2 47.4% 11.2%;
+          --primary-foreground: 210 40% 98%;
+          --secondary: 210 40% 96.1%;
+          --secondary-foreground: 222.2 47.4% 11.2%;
+          --muted: 210 40% 96.1%;
+          --muted-foreground: 215.4 16.3% 46.9%;
+          --accent: 210 40% 96.1%;
+          --accent-foreground: 222.2 47.4% 11.2%;
+          --destructive: 0 84.2% 60.2%;
+          --destructive-foreground: 210 40% 98%;
+          --border: 214.3 31.8% 91.4%;
+          --input: 214.3 31.8% 91.4%;
+          --ring: 222.2 84% 4.9%;
+          --radius: 0.5rem;
         }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background-color: white;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-
-        th,
-        td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #0f4c81;
-            color: white;
-        }
+      }
+      body {
+        @apply bg-slate-50 text-foreground antialiased font-sans;
+      }
+      /* Custom Scrollbar for Tabs */
+      .no-scrollbar::-webkit-scrollbar {
+          display: none;
+      }
+      .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
     </style>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
+    <div id="root">
+        <div style="padding: 20px; text-align: center; color: #666; font-family: sans-serif;">
+            Loading Application...
+        </div>
+    </div>
 
-    <h1>広告監視ダッシュボード (テスト)</h1>
-
-    <table>
-        <thead>
-            <tr>
-                <th>会社名</th>
-                <th>消化金額</th>
-                <th>CPA</th>
-                <th>LTV</th>
-                <th>目標CPA (LTV10%)</th>
-                <th>限界CPA (LTV20%)</th>
-            </tr>
-        </thead>
-        <tbody id="data-table-body">
-            <tr>
-                <td colspan="6">データを読み込み中...</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <script>
-        // ★ここを書き換えます★
-        // ステップ1で取得したURLとキーを、シングルクォーテーション(' ')の中に貼り付けてください。
-        const SUPABASE_URL = 'https://mfnsggsmsjerjugppfwh.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_dHM5W8jcyuYxNVMY_-Zfhg_BBQ5YZ1S';
-
-        // Supabaseに接続
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // データを取得して画面に表示する機能
-        async function fetchData() {
-            // ad_metricsテーブルからデータを取得
-            const { data, error } = await supabase.from('ad_metrics').select('*');
-
-            if (error) {
-                console.error('エラー:', error);
-                document.getElementById('data-table-body').innerHTML = '<tr><td colspan="6">データの読み込みに失敗しました。</td></tr>';
-                return;
+    <script type="text/babel">
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
             }
-
-            const tbody = document.getElementById('data-table-body');
-            tbody.innerHTML = ''; // 「読み込み中...」を消す
-
-            // データが無い場合の処理
-            if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6">まだデータがありません。Supabaseでダミーデータを追加してください。</td></tr>';
-                return;
+            static getDerivedStateFromError(error) { return { hasError: true, error }; }
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div style={{ padding: '2rem', color: '#ef4444', backgroundColor: '#fef2f2', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+                            <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Application Error</h1>
+                            <pre style={{ whiteSpace: 'pre-wrap', backgroundColor: '#fee2e2', padding: '1rem', borderRadius: '0.5rem' }}>
+                                {this.state.error && this.state.error.toString()}
+                            </pre>
+                        </div>
+                    );
+                }
+                return this.props.children;
             }
-
-            // 取得したデータを表に追加
-            data.forEach(row => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${row.company_name}</td>
-                    <td>${row.spend.toLocaleString()}円</td>
-                    <td>${row.cpa.toLocaleString()}円</td>
-                    <td>${row.ltv.toLocaleString()}円</td>
-                    <td>${row.target_cpa.toLocaleString()}円</td>
-                    <td>${row.limit_cpa.toLocaleString()}円</td>
-                `;
-                tbody.appendChild(tr);
-            });
         }
 
-        // ページを開いたときに実行
-        fetchData();
+        const { useState, useEffect, useMemo, useCallback } = React;
+
+        const SUPABASE_URL = "https://mfnsggsmsjerjugppfwh.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_dHM5W8jcyuYxNVMY_-Zfhg_BBQ5YZ1S";
+        const supabase = window.supabase && SUPABASE_URL !== "YOUR_SUPABASE_URL_HERE" ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+        const getLucideIcon = (name) => {
+            if (!window.lucide) return null;
+            if (window.lucide.icons && window.lucide.icons[name]) return window.lucide.icons[name];
+            if (window.lucide[name]) return window.lucide[name];
+            return null;
+        };
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            const iconRef = React.useRef(null);
+            const [hasError, setHasError] = useState(false);
+
+            useEffect(() => {
+                try {
+                    const iconObj = getLucideIcon(name);
+                    if (iconObj && typeof iconObj.toSvg === 'function' && iconRef.current) {
+                        iconRef.current.innerHTML = iconObj.toSvg({ width: size, height: size, class: className });
+                    }
+                } catch (e) {
+                    setHasError(true);
+                }
+            }, [name, size, className]);
+
+            if (hasError) return <span className="inline-block w-4 h-4 bg-red-200"></span>;
+            return <i ref={iconRef} className={`inline-flex items-center justify-center ${className}`} />;
+        };
+
+        const Card = ({ children, className = "" }) => (
+            <div className={`rounded-xl border bg-card text-card-foreground shadow-sm bg-white ${className}`}>{children}</div>
+        );
+
+        const Badge = ({ children, variant = "default", className = "" }) => {
+            const variants = {
+                default: "bg-primary text-primary-foreground",
+                active: "bg-emerald-100 text-emerald-800 border-emerald-200",
+                paused: "bg-slate-100 text-slate-800 border-slate-200",
+                rejected: "bg-red-100 text-red-600 border-red-200",
+                alert: "bg-amber-100 text-amber-800 border-amber-200",
+                secondary: "bg-slate-100 text-slate-700 border border-slate-200",
+            };
+            return (
+                <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold flex-shrink-0 ${variants[variant] || variants.default} ${className}`}>
+                    {children}
+                </span>
+            );
+        };
+
+        const formatCurrency = (val) => new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" }).format(val);
+        const formatNumber = (val) => new Intl.NumberFormat("ja-JP").format(val);
+        const formatDecimal = (val) => new Intl.NumberFormat("ja-JP", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
+        const formatPercent = (val) => new Intl.NumberFormat("ja-JP", { style: "percent", minimumFractionDigits: 1 }).format(val / 100);
+
+        const initialClientsMock = [
+            { id: "cl1", name: "株式会社アルファ", status: "active", adAccountId: "act_1001", budget: 2000000, targetCpa: 3000, limitCpa: 4500, targetCvs: 600, spend: 1250000, prevSpend: 1100000, cvs: 500, prevCvs: 450, cpa: 2500, assignee: "佐藤担当", clicks: 12500, prevClicks: 11000, impressions: 800000, alertReason: "", historyCvs: [30, 40, 45, 60, 50, 65, 70] },
+            { id: "cl2", name: "ベータクリニック", status: "alert", adAccountId: "act_2041", budget: 1500000, targetCpa: 8000, limitCpa: 10000, targetCvs: 180, spend: 850000, prevSpend: 880000, cvs: 85, prevCvs: 95, cpa: 10000, assignee: "鈴木担当", clicks: 8200, prevClicks: 8500, impressions: 1640000, alertReason: "限界CPA（¥10,000）を超過しています", historyCvs: [15, 12, 10, 8, 9, 6, 4] },
+            // ... (other mocks kept short for simplicity)
+        ];
+
+        const Sparkline = ({ data, color = "#10b981" }) => {
+            if (!data || data.length === 0) return null;
+            const max = Math.max(...data);
+            const min = Math.min(...data);
+            const range = max - min || 1;
+            const width = 60, height = 24;
+            const points = data.map((val, i) => `${(i / (data.length - 1)) * width},${height - ((val - min) / range) * height}`).join(" ");
+            return (
+                <svg width={width} height={height} viewBox={`0 -2 ${width} ${height + 4}`} className="overflow-visible stroke-current fill-none">
+                    <polyline points={points} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color }} />
+                </svg>
+            );
+        };
+
+        const generateClientData = (client) => {
+            const baseSpend = client.spend || client.budget * 0.5;
+            const baseCvs = client.cvs || client.targetCvs * 0.5;
+            return [
+                {
+                    id: `${client.id}-c1`, name: "リターゲティング_配信", level: 0, status: client.status === 'rejected' ? 'rejected' : "active",
+                    spend: baseSpend * 0.6, impressions: 800000, clicks: 8000, ctr: 1.0, cpa: (baseSpend * 0.6) / (baseCvs * 0.7) || 0, cvs: Math.floor(baseCvs * 0.7),
+                    children: [
+                        {
+                            id: `${client.id}-as1`, name: "全体訪問者_30日", level: 1, status: client.status === 'rejected' ? 'rejected' : "active",
+                            spend: baseSpend * 0.6, impressions: 800000, clicks: 8000, ctr: 1.0, cpa: (baseSpend * 0.6) / (baseCvs * 0.7) || 0, cvs: Math.floor(baseCvs * 0.7),
+                            children: [
+                                { id: `${client.id}-ad1`, name: "バナーA_割引訴求", level: 2, status: "active", spend: baseSpend * 0.4, impressions: 500000, clicks: 5000, ctr: 1.0, cpa: 0, cvs: Math.floor(baseCvs * 0.5) },
+                                { id: `${client.id}-ad2`, name: "バナーB_ブランディング", level: 2, status: client.status === 'rejected' ? 'rejected' : "active", spend: baseSpend * 0.2, impressions: 300000, clicks: 3000, ctr: 1.0, cpa: 0, cvs: Math.floor(baseCvs * 0.2) }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: `${client.id}-c2`, name: "ブロード配信_新規獲得", level: 0, status: client.status === 'rejected' ? "rejected" : "active",
+                    spend: baseSpend * 0.4, impressions: 1500000, clicks: 5000, ctr: 0.33, cpa: (baseSpend * 0.4) / (baseCvs * 0.3) || 0, cvs: Math.floor(baseCvs * 0.3),
+                    children: []
+                }
+            ];
+        };
+
+        const AddClientForm = ({ onSave, onCancel }) => {
+            const [formData, setFormData] = useState({ name: "", adAccountId: "", assignee: "", plan: "スタンダード", contractDate: "" });
+            const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (!formData.name || !formData.plan) return;
+                onSave({ id: `cl${Date.now()}`, ...formData, budget: 0, targetCpa: 0, limitCpa: 0, targetCvs: 0, spend: 0, prevSpend: 0, cvs: 0, prevCvs: 0, cpa: 0, clicks: 0, prevClicks: 0, impressions: 0, alertReason: "", historyCvs: [], status: "paused" });
+            };
+            return (
+                <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <header className="mb-6 pb-4 border-b border-slate-200 flex items-center gap-4">
+                        <button type="button" onClick={onCancel} className="text-slate-400 hover:text-slate-900 transition-colors p-2 -ml-2 rounded-full hover:bg-slate-100"><Icon name="ArrowLeft" size={20} /></button>
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-900">新規クライアント登録</h2>
+                            <p className="text-sm text-slate-500 mt-1">システム連携用のIDや基本情報を入力してください。</p>
+                        </div>
+                    </header>
+                    <form onSubmit={handleSubmit}>
+                        <Card className="p-6 space-y-8 shadow-sm">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-2"><label className="text-sm font-medium text-slate-700">クライアント名 <span className="text-red-500">*</span></label><input required name="name" value={formData.name} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm" placeholder="株式会社〇〇" /></div>
+                                <div className="space-y-2"><label className="text-sm font-medium text-slate-700">代表者名（担当者名）</label><input name="assignee" value={formData.assignee} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm" placeholder="担当者名を入力" /></div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700">契約プラン <span className="text-red-500">*</span></label>
+                                    <select required name="plan" value={formData.plan} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm bg-white cursor-pointer">
+                                        <option value="ライト">ライト</option>
+                                        <option value="スタンダード">スタンダード</option>
+                                        <option value="プレミアム">プレミアム</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-2"><label className="text-sm font-medium text-slate-700">契約日時</label><input type="date" name="contractDate" value={formData.contractDate} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm text-slate-700 cursor-pointer" /></div>
+                            </div>
+                            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                                <button type="button" onClick={onCancel} className="px-6 py-2 rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50 font-medium text-sm transition-colors shadow-sm">キャンセル</button>
+                                <button type="submit" className="bg-primary text-white hover:bg-primary/90 px-6 py-2 rounded-md font-medium text-sm transition-colors shadow-sm">保存する</button>
+                            </div>
+                        </Card>
+                    </form>
+                </div>
+            )
+        };
+
+        const CompBadge = ({ cur, prev, reverseColor = false }) => {
+            if (!prev) return <div className="text-[10px] text-slate-400 mt-0.5 min-h-[16px]">-</div>;
+            const diff = cur - prev;
+            if (diff === 0) return <div className="text-[10px] text-slate-400 mt-0.5 flex items-center justify-end gap-0.5 relative z-10"><Icon name="Minus" size={10} /> 0%</div>;
+            const pct = ((diff / prev) * 100).toFixed(1);
+            const color = diff > 0 ? (reverseColor ? "text-red-500" : "text-emerald-500") : (reverseColor ? "text-emerald-500" : "text-red-500");
+            const icon = diff > 0 ? "TrendingUp" : "TrendingDown";
+            return (
+                <div className={`text-[11px] font-bold mt-0.5 flex items-center justify-end gap-0.5 relative z-10 ${color}`}>
+                    <Icon name={icon} size={12} /> {Math.abs(pct)}%
+                </div>
+            );
+        };
+
+        const ClientList = ({ clients, onSelectClient, onAddNew, onUpdateClient }) => {
+            const [search, setSearch] = useState("");
+            const [assigneeFilter, setAssigneeFilter] = useState("all");
+            const [dateRange, setDateRange] = useState("this_month");
+            const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+            const [editingInput, setEditingInput] = useState({ id: null, field: null, value: "" });
+            const [menuOpen, setMenuOpen] = useState(null);
+
+            const handleSort = (key) => setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
+
+            const handleSaveEdit = (client, field) => {
+                const num = parseInt(editingInput.value.replace(/,/g, ''));
+                if (!isNaN(num)) onUpdateClient({ ...client, [field]: num });
+                setEditingInput({ id: null, field: null, value: "" });
+            };
+
+            const uniqueAssignees = Array.from(new Set(clients.map(c => c.assignee).filter(Boolean)));
+
+            const enriched = clients.map(c => ({ ...c, cpa: c.cvs > 0 ? c.spend / c.cvs : 0, ctr: c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0 }));
+
+            let processed = enriched.filter(c => {
+                const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || (c.adAccountId && c.adAccountId.includes(search));
+                const matchAssignee = assigneeFilter === "all" || c.assignee === assigneeFilter;
+                return matchSearch && matchAssignee;
+            });
+
+            processed.sort((a, b) => {
+                if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
+                if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            const SortIcon = ({ column }) => (
+                <Icon name={sortConfig.key === column ? (sortConfig.direction === 'asc' ? "ChevronUp" : "ChevronDown") : "ChevronsUpDown"} size={14} className={sortConfig.key === column ? "text-primary" : "text-slate-300 drop-shadow-sm opacity-50 hover:opacity-100 transition-opacity"} />
+            );
+
+            return (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 pb-20">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <h2 className="text-2xl font-bold tracking-tight text-slate-900">クライアント一覧</h2>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="pl-3 pr-8 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:border-primary appearance-none bg-white font-medium cursor-pointer shadow-sm">
+                                <option value="this_month">今月</option><option value="last_month">先月</option><option value="last_7">過去7日間</option>
+                            </select>
+                            <div className="relative border border-slate-200 rounded-md shadow-sm">
+                                <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className="pl-3 pr-8 py-2 w-full text-sm block appearance-none bg-white rounded-md focus:outline-none focus:border-primary font-medium text-slate-700 cursor-pointer">
+                                    <option value="all">全担当者</option>
+                                    {uniqueAssignees.map(a => <option key={a} value={a}>{a}</option>)}
+                                </select>
+                                <Icon name="Filter" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            </div>
+                            <input type="text" placeholder="キーワード検索" className="pl-3 pr-4 py-2 border border-slate-200 rounded-md text-sm min-w-[200px] shadow-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+                            <button onClick={onAddNew} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 shadow-sm transition-colors"><Icon name="Plus" size={16} /> 新規登録</button>
+                        </div>
+                    </div>
+                    <Card className="overflow-hidden shadow-sm">
+                        <div className="overflow-x-auto pb-4">
+                            <table className="w-full text-sm text-left whitespace-nowrap min-w-[1000px]">
+                                <thead className="bg-slate-50 border-b text-slate-500 font-semibold text-xs uppercase tracking-wider">
+                                    <tr>
+                                        <th className="px-5 py-3 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('name')}><div className="flex items-center gap-1">名前 <SortIcon column="name" /></div></th>
+                                        <th className="px-4 py-3 cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('status')}><div className="flex items-center gap-1">ステータス <SortIcon column="status" /></div></th>
+                                        <th className="px-4 py-3">担当</th>
+                                        <th className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('spend')}><div className="flex items-center justify-end gap-1"><SortIcon column="spend" />消化 / 予算</div></th>
+                                        <th className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('cpa')}><div className="flex items-center justify-end gap-1"><SortIcon column="cpa" />CPA</div></th>
+                                        <th className="px-4 py-3 text-right">目標/限界CPA</th>
+                                        <th className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('ctr')}><div className="flex items-center justify-end gap-1"><SortIcon column="ctr" />CTR</div></th>
+                                        <th className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('cvs')}><div className="flex items-center justify-end gap-1"><SortIcon column="cvs" />結果 (推移)</div></th>
+                                        <th className="px-4 py-3 text-center">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {processed.map(client => {
+                                        const spendRatio = client.budget > 0 ? (client.spend / client.budget) * 100 : 0;
+                                        return (
+                                            <tr key={client.id} className={`border-b border-slate-100 hover:bg-slate-50/80 transition-all ${menuOpen === client.id ? "bg-slate-50 relative z-20" : "relative z-0"}`}>
+                                                <td className="px-5 py-4 font-medium align-middle">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-9 h-9 rounded-md bg-white text-primary flex items-center justify-center text-sm font-bold shadow-sm border border-slate-200">{client.name.charAt(0)}</div>
+                                                        <div>
+                                                            <div className="text-slate-900 text-sm">{client.name}</div>
+                                                            <div className="text-[11px] text-slate-400 font-normal mt-0.5">{client.adAccountId}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 align-middle">
+                                                    <div className="group relative inline-block">
+                                                        {client.status === 'active' && <Badge variant="active">配信中</Badge>}
+                                                        {client.status === 'alert' && <Badge variant="alert" className="cursor-help">アラート</Badge>}
+                                                        {client.status === 'paused' && <Badge variant="paused">停止中</Badge>}
+                                                        {client.status === 'rejected' && <Badge variant="rejected">審査エラー</Badge>}
+                                                        {client.status === 'alert' && client.alertReason && (
+                                                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-max max-w-[220px] bg-slate-800 text-white text-xs rounded-md shadow-lg py-2 px-3 z-[100] whitespace-normal">
+                                                                <div className="flex items-start gap-2">
+                                                                    <Icon name="AlertCircle" size={14} className="text-red-400 shrink-0 mt-0.5" />
+                                                                    <span>{client.alertReason}</span>
+                                                                </div>
+                                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 text-slate-500 font-medium align-middle text-xs">{client.assignee || <span className="text-slate-400 font-normal">未設定</span>}</td>
+                                                <td className="px-4 py-4 text-right align-middle">
+                                                    <div className="font-bold text-slate-900 text-sm tracking-tight">{formatCurrency(client.spend)}</div>
+                                                    <div className="text-[11px] text-slate-400 mt-1">/ {formatCurrency(client.budget)}</div>
+                                                    <div className="w-full bg-slate-100 rounded-full h-1.5 mt-1.5 overflow-hidden shadow-inner">
+                                                        <div className={`h-full rounded-full transition-all duration-700 ease-out ${spendRatio > 100 ? 'bg-red-500' : 'bg-primary'}`} style={{ width: `${Math.min(spendRatio, 100)}%` }}></div>
+                                                    </div>
+                                                    <div className="flex justify-between items-center mt-0.5">
+                                                        <CompBadge cur={client.spend} prev={client.prevSpend} reverseColor={true} />
+                                                        <span className="text-[10px] text-slate-400 font-semibold">{spendRatio.toFixed(1)}%</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 text-right align-middle whitespace-nowrap">
+                                                    <div className={`font-bold text-base tracking-tight ${client.cpa > client.limitCpa && client.limitCpa > 0 ? "text-red-600" : "text-slate-900"}`}>{formatCurrency(client.cpa)}</div>
+                                                    <CompBadge cur={client.cpa} prev={client.prevCvs > 0 ? client.prevSpend / client.prevCvs : 0} reverseColor={true} />
+                                                </td>
+                                                <td className="px-4 py-4 text-right align-middle whitespace-nowrap">
+                                                    <div className="flex flex-col gap-1.5 items-end pl-4">
+                                                        {['targetCpa', 'limitCpa'].map(field => {
+                                                            const isEditing = editingInput.id === client.id && editingInput.field === field;
+                                                            return isEditing ? (
+                                                                <div key={field} className="flex items-center gap-1.5">
+                                                                    <span className="text-[10px] text-slate-400 w-6 text-left">{field === 'targetCpa' ? '目標' : '限界'}</span>
+                                                                    <input autoFocus type="number" className="w-24 px-2 py-0.5 text-xs text-right border border-primary focus:ring-2 focus:ring-primary/20 rounded shadow-sm outline-none font-medium" value={editingInput.value} onChange={e => setEditingInput({ ...editingInput, value: e.target.value })} onBlur={() => handleSaveEdit(client, field)} onKeyDown={e => e.key === 'Enter' && handleSaveEdit(client, field)} />
+                                                                </div>
+                                                            ) : (
+                                                                <div key={field} className="flex items-center justify-end gap-1.5 group cursor-pointer hover:bg-slate-50 p-0.5 -m-0.5 rounded transition-colors" onClick={() => setEditingInput({ id: client.id, field, value: client[field] })}>
+                                                                    <span className="text-[10px] text-slate-400 w-6 text-left">{field === 'targetCpa' ? '目標' : '限界'}</span>
+                                                                    <span className="text-slate-700 font-semibold text-xs tracking-tight">{client[field] > 0 ? formatCurrency(client[field]) : '-'}</span>
+                                                                    <Icon name="Edit2" size={10} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 text-right align-middle">
+                                                    <div className="font-bold text-slate-700 text-sm mix-blend-multiply">{formatPercent(client.ctr)}</div>
+                                                </td>
+                                                <td className="px-4 py-4 text-right align-middle">
+                                                    <div className="flex items-center justify-end gap-4 min-w-[120px]">
+                                                        <div className="flex flex-col items-end">
+                                                            <div className="font-bold text-slate-900 text-lg tracking-tight">{formatNumber(client.cvs || 0)}</div>
+                                                            <CompBadge cur={client.cvs || 0} prev={client.prevCvs || 0} />
+                                                        </div>
+                                                        <div className="w-16 hidden md:block opacity-80 hover:opacity-100 transition-opacity"><Sparkline data={client.historyCvs} color={client.cvs >= (client.prevCvs || 0) ? "#10b981" : "#ef4444"} /></div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-4 text-center align-middle relative">
+                                                    <div className="flex items-center justify-center gap-1.5">
+                                                        <button onClick={() => onSelectClient(client)} className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-3 py-1.5 rounded font-medium text-xs flex items-center justify-center shadow-sm transition-colors whitespace-nowrap">
+                                                            詳細 <Icon name="ChevronRight" size={14} className="ml-0.5" />
+                                                        </button>
+                                                        <button onClick={() => setMenuOpen(menuOpen === client.id ? null : client.id)} className={`p-1.5 rounded transition-colors relative z-10 ${menuOpen === client.id ? "bg-slate-200 text-slate-800 shadow-inner" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"}`}><Icon name="MoreHorizontal" size={16} /></button>
+                                                    </div>
+                                                    {menuOpen === client.id && (
+                                                        <div className="absolute right-6 top-12 w-48 bg-white border border-slate-200 rounded-md shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] z-50 py-1.5 text-left animate-in fade-in zoom-in-95 duration-100">
+                                                            <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">アクション</div>
+                                                            <button className="w-full px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"><Icon name="FileBarChart" size={14} className="text-slate-400" /> レポート出力</button>
+                                                            <button className="w-full px-4 py-2 text-xs font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 flex items-center gap-2.5 transition-colors"><Icon name="PauseCircle" size={14} className="text-amber-500" /> 配信一時停止</button>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </Card>
+                </div>
+            )
+        };
+
+        const HISTORY_MENU = {
+            "広告設定": ["予算調整", "ターゲティング変更", "オーディエンス追加", "配信ステータス変更", "入札戦略変更", "その他"],
+            "クリエイティブ": ["画像/動画の追加", "メインテキスト変更", "見出し変更", "画像/動画の差し替え・停止", "その他"],
+            "リンク先": ["遷移先URL変更", "UTMパラメータ追加・変更", "遷移先停止/差し替え", "その他"]
+        };
+
+        const DashboardDetail = ({ client, onBack, onUpdateClient }) => {
+            const [data, setData] = useState(useMemo(() => generateClientData(client), [client]));
+            const [expandedRows, setExpandedRows] = useState(new Set([`${client.id}-c1`, `${client.id}-as1`]));
+            const [activeTab, setActiveTab] = useState("dashboard");
+            const [activeInfoTab, setActiveInfoTab] = useState("basic");
+            const [dateRange, setDateRange] = useState("this_month");
+
+            // Supabase states
+            const [dbHistoryLogs, setDbHistoryLogs] = useState([]);
+            const [dbMinutesLogs, setDbMinutesLogs] = useState([]);
+
+            useEffect(() => {
+                const loadDetails = async () => {
+                    if (!supabase) return;
+                    try {
+                        // ad_metrics (if you want to fetch and replace data here)
+                        // const resAd = await supabase.from('ad_metrics').select('*').eq('client_id', client.id);
+
+                        // change_logs
+                        const resLogs = await supabase.from('change_logs').select('*').eq('client_id', client.id).order('action_date', { ascending: false });
+                        if (resLogs.data) {
+                            setDbHistoryLogs(resLogs.data.map(d => ({
+                                id: d.id,
+                                date: d.action_date,
+                                user: d.assignee || '不明',
+                                action: `${d.category_main}: ${d.category_sub}`,
+                                detail: d.memo,
+                                before: d.value_before,
+                                after: d.value_after
+                            })));
+                        }
+
+                        // meeting_notes
+                        const resNotes = await supabase.from('meeting_notes').select('*').eq('client_id', client.id).order('meeting_date', { ascending: false });
+                        if (resNotes.data) {
+                            setDbMinutesLogs(resNotes.data.map(d => ({
+                                id: d.id,
+                                date: d.meeting_date,
+                                user: '不明', // Or add assignee to table
+                                title: d.title,
+                                detail: d.summary,
+                                url: d.url
+                            })));
+                        }
+                    } catch (e) { console.error('Error loading details', e); }
+                };
+                loadDetails();
+            }, [client.id]);
+
+            // Header inline editing
+            const [editingHeaderField, setEditingHeaderField] = useState(null);
+            const [headerTempVal, setHeaderTempVal] = useState("");
+
+            const startEditingHeader = (field, val) => {
+                setEditingHeaderField(field);
+                setHeaderTempVal(val);
+            };
+
+            const saveEditingHeader = () => {
+                if (editingHeaderField) {
+                    onUpdateClient({
+                        ...client,
+                        [editingHeaderField]: editingHeaderField === 'name' ? headerTempVal : Number(headerTempVal)
+                    });
+                }
+                setEditingHeaderField(null);
+            };
+
+
+            // Dummy History state
+            const [historyLogs, setHistoryLogs] = useState([
+                { id: 1, date: "2026-03-26", user: "運用担当者", action: "広告設定: 予算調整", detail: "消化好調につき、リターゲティングの1日あたりの予算を増額。", before: "￥10,000/日", after: "￥15,000/日" },
+                { id: 2, date: "2026-03-24", user: "制作部", action: "クリエイティブ: 画像/動画の追加", detail: "春季キャンペーン用のスライダーバナーを3点入稿し、既存の古いバナーを停止。", before: "", after: "" },
+            ]);
+            const [logCategory, setLogCategory] = useState("広告設定");
+            const [logSubCategory, setLogSubCategory] = useState(HISTORY_MENU["広告設定"][0]);
+            const [logUser, setLogUser] = useState("運用担当者");
+            const [logBefore, setLogBefore] = useState("");
+            const [logAfter, setLogAfter] = useState("");
+            const [newLog, setNewLog] = useState("");
+
+            // Filter states for History Tab
+            const [historyFilterDate, setHistoryFilterDate] = useState("all");
+            const [historyFilterMainCat, setHistoryFilterMainCat] = useState("all");
+            const [historyFilterSubCat, setHistoryFilterSubCat] = useState("all");
+
+            useEffect(() => {
+                setLogSubCategory(HISTORY_MENU[logCategory][0]);
+            }, [logCategory]);
+
+            useEffect(() => {
+                setHistoryFilterSubCat("all"); // Reset sub category when main category changes
+            }, [historyFilterMainCat]);
+
+            // Minutes State
+            const getTodayStr = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+            const [minutesLogs, setMinutesLogs] = useState([
+                { id: 1, date: "2026-03-25", user: "運用担当: 佐藤", title: "4月度キャンペーン定例ミーティング", detail: "・4月15日からの春季キャンペーンについてすり合わせ\n・予算は現状維持だが、リターゲティンクの比率を現状の10%から20%へ増やす方向\n・新規クリエイティブは来週水曜までにクライアント側からURL（Drive）にて連携予定\n\n【Next Action】\n佐藤: 水曜に素材受領後、即日入稿\nクライアント様: 素材URLの手配", url: "" }
+            ]);
+            const [newMinuteDate, setNewMinuteDate] = useState(getTodayStr());
+            const [newMinuteTitle, setNewMinuteTitle] = useState("");
+            const [newMinuteUrl, setNewMinuteUrl] = useState("");
+            const [newMinuteText, setNewMinuteText] = useState("");
+
+            // Info State
+            const [clientInfo, setClientInfo] = useState({
+                assignee: client.assignee || "",
+                clientContact: "山田 太郎 (yamada@example.com)",
+                businessDetails: "都内で3店舗を展開する美容サロン。20代〜30代後半の女性がメインターゲット。強みは最新の痛くない脱毛器と完全個室のプライベート空間。",
+                services: "全身脱毛, VIO脱毛, フェイシャル",
+                pixelId: "1234567890987654",
+                targetCpa: "¥8,000",
+                assetUrl: "https://drive.google.com/drive/folders/xxxxxxxxx_example",
+                guidelineUrl: "https://notion.so/guidelines",
+                websiteUrl: "https://example-beauty-salon.com",
+                hotpepperUrl: "https://beauty.hotpepper.jp/slnX000000000/",
+                lineUrl: "https://lin.ee/xxxxxx",
+                instagramUrl: "https://instagram.com/beauty_salon_example"
+            });
+            const [editingInfoField, setEditingInfoField] = useState(null);
+
+            const handleInfoSave = () => {
+                setEditingInfoField(null);
+                onUpdateClient({ ...client, info: clientInfo });
+            };
+            const handleAddLog = (e) => {
+                e.preventDefault();
+                const now = new Date();
+                const d = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                setHistoryLogs([{ id: Date.now(), date: d, user: logUser, action: `${logCategory}: ${logSubCategory}`, detail: newLog || "(メモなし)", before: logBefore, after: logAfter }, ...historyLogs]);
+                setNewLog("");
+                setLogBefore("");
+                setLogAfter("");
+            };
+
+            const handleAddMinute = (e) => {
+                e.preventDefault();
+                if (!newMinuteTitle || !newMinuteDate || !newMinuteText) return;
+                setMinutesLogs([{ id: Date.now(), date: newMinuteDate, user: "ログインユーザー", title: newMinuteTitle, detail: newMinuteText, url: newMinuteUrl }, ...minutesLogs]);
+                setNewMinuteDate(getTodayStr());
+                setNewMinuteTitle("");
+                setNewMinuteText("");
+                setNewMinuteUrl("");
+            };
+
+            const [editHistoryId, setEditHistoryId] = useState(null);
+            const [editHistoryForm, setEditHistoryForm] = useState(null);
+            const handleDeleteHistory = (id) => { if (window.confirm('この履歴を削除しますか？')) setHistoryLogs(prev => prev.filter(l => l.id !== id)); };
+            const handleSaveHistory = () => { setHistoryLogs(prev => prev.map(l => l.id === editHistoryForm.id ? editHistoryForm : l)); setEditHistoryId(null); };
+
+            const [editMinuteId, setEditMinuteId] = useState(null);
+            const [editMinuteForm, setEditMinuteForm] = useState(null);
+            const handleDeleteMinute = (id) => { if (window.confirm('この議事録を削除しますか？')) setMinutesLogs(prev => prev.filter(l => l.id !== id)); };
+            const handleSaveMinute = () => { setMinutesLogs(prev => prev.map(l => l.id === editMinuteForm.id ? editMinuteForm : l)); setEditMinuteId(null); };
+
+            const toggleExpand = (id) => {
+                const newSet = new Set(expandedRows);
+                newSet.has(id) ? newSet.delete(id) : newSet.add(id);
+                setExpandedRows(newSet);
+            };
+
+            const renderRows = (items) => {
+                let rows = [];
+                items.forEach(item => {
+                    const isExpanded = expandedRows.has(item.id);
+                    const hasChildren = item.children && item.children.length > 0;
+                    const indentClass = item.level === 0 ? "pl-4" : item.level === 1 ? "pl-10" : "pl-16";
+                    const rowBgClass = item.level === 0 ? "bg-white hover:bg-slate-50/80" : item.level === 1 ? "bg-slate-50/50 hover:bg-slate-100/50" : "bg-slate-50 hover:bg-slate-100";
+
+                    const cpa = item.cvs > 0 ? item.spend / item.cvs : 0;
+                    const cpm = item.impressions > 0 ? (item.spend / item.impressions) * 1000 : 0;
+                    const cpc = item.clicks > 0 ? item.spend / item.clicks : 0;
+                    const ctr = item.impressions > 0 ? (item.clicks / item.impressions) * 100 : 0;
+                    const freq = item.level === 0 ? 1.8 : item.level === 1 ? 1.5 : 1.2;
+
+                    rows.push(
+                        <tr key={item.id} className={`border-b border-border transition-colors cursor-pointer ${rowBgClass}`} onClick={() => hasChildren && toggleExpand(item.id)}>
+                            <td className={`p-3 align-middle font-medium ${indentClass}`}>
+                                <div className="flex items-center gap-2">
+                                    {hasChildren ? <span className={`text-slate-400 transition-transform ${isExpanded ? "rotate-90" : ""}`}><Icon name="ChevronRight" size={16} /></span> : <span className="w-4" />}
+                                    <span className={`flex items-center gap-2 font-medium text-slate-800`}>{item.name}</span>
+                                </div>
+                            </td>
+                            <td className="p-3 align-middle">{item.status === 'active' ? <Badge variant="active">配信中</Badge> : <Badge variant="paused">停止中</Badge>}</td>
+                            <td className="p-3 align-middle text-right font-bold">{formatNumber(item.cvs)}</td>
+                            <td className="p-3 align-middle text-right">{cpa > 0 ? formatCurrency(Math.floor(cpa)) : "-"}</td>
+                            <td className="p-3 align-middle text-right">{formatNumber(item.impressions)}</td>
+                            <td className="p-3 align-middle text-right">{formatCurrency(Math.floor(cpm))}</td>
+                            <td className="p-3 align-middle text-right">{formatNumber(item.clicks)}</td>
+                            <td className="p-3 align-middle text-right">{formatDecimal(freq)}</td>
+                            <td className="p-3 align-middle text-right">{formatCurrency(Math.floor(cpc))}</td>
+                            <td className="p-3 align-middle text-right">{formatPercent(ctr)}</td>
+                        </tr>
+                    );
+                    if (isExpanded && item.children) rows = rows.concat(renderRows(item.children));
+                });
+                return rows;
+            };
+
+            const isCpaHigh = client.cpa >= client.limitCpa && client.limitCpa > 0;
+
+            return (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+                    <button onClick={onBack} className="text-sm font-medium text-slate-500 hover:text-slate-900 flex items-center transition-colors">
+                        <Icon name="ArrowLeft" size={16} className="mr-1" /> クライアント一覧に戻る
+                    </button>
+
+                    <header className="mb-2 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-3 mb-3 group">
+                                <div className="w-10 h-10 rounded bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg shadow-sm">
+                                    {client.name.charAt(0)}
+                                </div>
+                                {editingHeaderField === 'name' ? (
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        value={headerTempVal}
+                                        onChange={e => setHeaderTempVal(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && saveEditingHeader()}
+                                        onBlur={saveEditingHeader}
+                                        className="text-2xl font-bold tracking-tight text-slate-900 bg-white border border-primary px-2 py-0.5 rounded outline-none w-64 focus:ring-2 focus:ring-primary/20"
+                                    />
+                                ) : (
+                                    <div className="flex items-center gap-2 cursor-pointer" onClick={() => startEditingHeader('name', client.name)}>
+                                        <h2 className="text-2xl font-bold tracking-tight text-slate-900">{client.name}</h2>
+                                        <Icon name="Edit3" size={16} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity hover:text-primary" />
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600 bg-white p-3 rounded-lg border border-slate-200 shadow-sm w-fit">
+                                {['budget', 'targetCpa', 'limitCpa'].map(field => {
+                                    const labels = { budget: '予算', targetCpa: '目標CPA', limitCpa: '限界CPA' };
+                                    const icons = { budget: 'Wallet', targetCpa: 'Target', limitCpa: 'AlertTriangle' };
+                                    return (
+                                        <div key={field} className="flex items-center gap-1.5 group cursor-pointer" onClick={() => startEditingHeader(field, client[field])}>
+                                            <Icon name={icons[field]} size={14} className="text-slate-400" />
+                                            <span className="text-slate-500">{labels[field]}:</span>
+                                            {editingHeaderField === field ? (
+                                                <input
+                                                    autoFocus
+                                                    type="number"
+                                                    value={headerTempVal}
+                                                    onChange={e => setHeaderTempVal(e.target.value)}
+                                                    onKeyDown={e => e.key === 'Enter' && saveEditingHeader()}
+                                                    onBlur={saveEditingHeader}
+                                                    className="w-24 px-1 py-0.5 text-xs font-semibold border border-primary outline-none focus:ring-2 focus:ring-primary/20 rounded"
+                                                />
+                                            ) : (
+                                                <span className="font-semibold text-slate-900 flex items-center gap-1 hover:text-primary transition-colors">
+                                                    {client[field] > 0 ? formatCurrency(client[field]) : '未設定'}
+                                                    <Icon name="Edit3" size={12} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                </span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <Icon name="Calendar" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                <select
+                                    value={dateRange}
+                                    onChange={(e) => setDateRange(e.target.value)}
+                                    className="appearance-none bg-white border border-slate-200 rounded-md shadow-sm pl-9 pr-8 py-2 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer hover:bg-slate-50 transition-colors"
+                                >
+                                    <option value="today">本日</option>
+                                    <option value="yesterday">昨日</option>
+                                    <option value="last_7">過去7日間</option>
+                                    <option value="last_30">過去30日間</option>
+                                    <option value="this_month">今月</option>
+                                    <option value="last_month">先月</option>
+                                    <option value="custom">カスタム指定</option>
+                                </select>
+                                <Icon name="ChevronDown" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            </div>
+                            {activeTab === 'dashboard' && (
+                                <button className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-colors flex items-center h-[38px]">
+                                    <Icon name="Download" size={16} className="mr-2 text-slate-400" /> CSV出力
+                                </button>
+                            )}
+                        </div>
+                    </header>
+
+                    {/* タブナビゲーション */}
+                    <div className="border-b border-slate-200">
+                        <nav className="-mb-px flex space-x-8 overflow-x-auto no-scrollbar" aria-label="Tabs">
+                            <button onClick={() => setActiveTab('dashboard')} className={`whitespace-nowrap flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'dashboard' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
+                                <Icon name="LayoutDashboard" size={16} className="mr-2" /> 配信ステータス
+                            </button>
+                            <button onClick={() => setActiveTab('history')} className={`whitespace-nowrap flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'history' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
+                                <Icon name="History" size={16} className="mr-2" /> 変更履歴・ログ
+                            </button>
+                            <button onClick={() => setActiveTab('minutes')} className={`whitespace-nowrap flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'minutes' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
+                                <Icon name="BookOpen" size={16} className="mr-2" /> 打ち合わせ議事録
+                            </button>
+                            <button onClick={() => setActiveTab('info')} className={`whitespace-nowrap flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'info' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
+                                <Icon name="Info" size={16} className="mr-2" /> アカウント情報 (URL/詳細)
+                            </button>
+                        </nav>
+                    </div>
+
+                    {/* タブコンテンツ: ダッシュボード */}
+                    {activeTab === 'dashboard' && (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                            <Card className="overflow-hidden shadow-sm border-slate-200">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left whitespace-nowrap">
+                                        <thead className="text-xs text-slate-500 bg-slate-50/80 border-b">
+                                            <tr>
+                                                <th className="px-3 py-3 w-[220px]">名前</th>
+                                                <th className="px-3 py-3">ステータス</th>
+                                                <th className="px-3 py-3 text-right">結果</th>
+                                                <th className="px-3 py-3 text-right">結果の単価</th>
+                                                <th className="px-3 py-3 text-right">インプレッション</th>
+                                                <th className="px-3 py-3 text-right">CPM</th>
+                                                <th className="px-3 py-3 text-right">リンククリック</th>
+                                                <th className="px-3 py-3 text-right">フリークエンシー</th>
+                                                <th className="px-3 py-3 text-right">CPC</th>
+                                                <th className="px-3 py-3 text-right">CTR</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>{renderRows(data)}</tbody>
+                                    </table>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
+
+                    {/* タブコンテンツ: History */}
+                    {activeTab === 'history' && (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                            <Card className="p-6 border-slate-200 bg-white shadow-sm">
+                                <h3 className="text-sm font-bold text-slate-900 mb-5 flex items-center gap-2">
+                                    <Icon name="MessageSquarePlus" size={18} className="text-primary" /> 新しい変更履歴・ログを追加
+                                </h3>
+                                <form onSubmit={handleAddLog} className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-slate-700 block">担当者</label>
+                                            <div className="relative">
+                                                <select value={logUser} onChange={e => setLogUser(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white appearance-none pr-8 cursor-pointer">
+                                                    <option value="運用担当者">運用担当者</option>
+                                                    <option value="制作部">制作部</option>
+                                                    <option value="金谷">金谷</option>
+                                                    <option value="クライアント">クライアント</option>
+                                                </select>
+                                                <Icon name="ChevronDown" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-slate-700 block">大項目（何についての変更か）</label>
+                                            <div className="relative">
+                                                <select value={logCategory} onChange={e => setLogCategory(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white appearance-none pr-8 cursor-pointer">
+                                                    {Object.keys(HISTORY_MENU).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                                </select>
+                                                <Icon name="ChevronDown" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-slate-700 block">小項目（詳細な分類）</label>
+                                            <div className="relative">
+                                                <select value={logSubCategory} onChange={e => setLogSubCategory(e.target.value)} className="w-full px-3 py-2.5 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white appearance-none pr-8 cursor-pointer">
+                                                    {HISTORY_MENU[logCategory] && HISTORY_MENU[logCategory].map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                                                </select>
+                                                <Icon name="ChevronDown" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-slate-700 block">変更前 (任意)</label>
+                                            <input type="text" value={logBefore} onChange={e => setLogBefore(e.target.value)} placeholder="例: 月額50万円 または OFF" className="w-full px-3 py-2.5 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-slate-700 block">変更後 (任意)</label>
+                                            <input type="text" value={logAfter} onChange={e => setLogAfter(e.target.value)} placeholder="例: 月額80万円 または ON" className="w-full px-3 py-2.5 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white" />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-col md:flex-row gap-3 items-end pt-1">
+                                        <div className="flex-1 w-full space-y-2">
+                                            <label className="text-xs font-semibold text-slate-700 block">具体的な変更メモ (任意)</label>
+                                            <input type="text" value={newLog} onChange={e => setNewLog(e.target.value)} placeholder="例: CVR改善のため予算比率をアップしました。" className="w-full px-4 py-2.5 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-slate-50 focus:bg-white transition-colors" />
+                                        </div>
+                                        <button type="submit" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white px-8 py-2.5 rounded-md font-medium text-sm shadow-sm transition-colors whitespace-nowrap flex items-center justify-center gap-2 h-10">
+                                            <Icon name="Send" size={16} /> 履歴に残す
+                                        </button>
+                                    </div>
+                                </form>
+                            </Card>
+
+                            {/* フィルターバー */}
+                            <div className="flex flex-wrap gap-3 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-200 shadow-sm relative z-10">
+                                <div className="flex items-center gap-2">
+                                    <Icon name="Filter" size={14} className="text-slate-500" />
+                                    <span className="text-xs font-semibold text-slate-600">絞り込み:</span>
+                                </div>
+                                <select value={historyFilterDate} onChange={(e) => setHistoryFilterDate(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md text-xs focus:outline-none focus:border-primary bg-white cursor-pointer min-w-[120px]">
+                                    <option value="all">すべての期間</option>
+                                    <option value="last_7">直近7日間</option>
+                                    <option value="this_month">今月</option>
+                                </select>
+                                <select value={historyFilterMainCat} onChange={(e) => setHistoryFilterMainCat(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-md text-xs focus:outline-none focus:border-primary bg-white cursor-pointer min-w-[140px]">
+                                    <option value="all">全カテゴリ</option>
+                                    {Object.keys(HISTORY_MENU).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                </select>
+                                <select value={historyFilterSubCat} onChange={(e) => setHistoryFilterSubCat(e.target.value)} disabled={historyFilterMainCat === "all"} className="px-3 py-1.5 border border-slate-200 rounded-md text-xs focus:outline-none focus:border-primary bg-white cursor-pointer disabled:opacity-50 min-w-[140px]">
+                                    <option value="all">全サブカテゴリ</option>
+                                    {historyFilterMainCat !== "all" && HISTORY_MENU[historyFilterMainCat] && HISTORY_MENU[historyFilterMainCat].map(sub => <option key={sub} value={sub}>{sub}</option>)}
+                                </select>
+                            </div>
+
+                            <div className="space-y-4">
+                                {(() => {
+                                    // 1. フィルタリングロジック
+                                    const currentHistory = supabase ? dbHistoryLogs : historyLogs;
+                                    const filtered = currentHistory.filter(log => {
+                                        const [mainCat, subCat] = log.action.split(": ");
+                                        if (historyFilterMainCat !== "all" && mainCat !== historyFilterMainCat) return false;
+                                        if (historyFilterSubCat !== "all" && subCat !== historyFilterSubCat) return false;
+                                        return true;
+                                    });
+
+                                    if (filtered.length === 0) {
+                                        return (
+                                            <div className="py-12 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+                                                <Icon name="SearchX" size={32} className="text-slate-300 mb-3" />
+                                                <p className="text-slate-500 text-sm">該当する変更履歴はありません。</p>
+                                            </div>
+                                        );
+                                    }
+
+                                    // 2. 日付ごとにグルーピング
+                                    const grouped = filtered.reduce((acc, log) => {
+                                        const [dPart, tPart] = log.date.split(" ");
+                                        if (!acc[dPart]) acc[dPart] = [];
+                                        acc[dPart].push({ ...log, time: tPart });
+                                        return acc;
+                                    }, {});
+
+                                    const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
+
+                                    return (
+                                        <div className="relative ml-8">
+                                            {/* ベースの縦ライン */}
+                                            <div className="absolute left-0 top-6 bottom-4 w-px bg-slate-200"></div>
+
+                                            <div className="space-y-10 relative">
+                                                {sortedDates.map(date => {
+                                                    const [y, m, d] = date.split("-");
+                                                    const formattedDate = `${y}年${parseInt(m)}月${parseInt(d)}日`;
+
+                                                    return (
+                                                        <div key={date} className="relative">
+                                                            {/* 日付ヘッダー */}
+                                                            <div className="flex items-center gap-4 relative z-10 -ml-[15px]">
+                                                                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center border border-slate-200 shadow-sm text-slate-500">
+                                                                    <Icon name="Calendar" size={14} />
+                                                                </div>
+                                                                <h4 className="font-bold text-slate-800 tracking-tight">{formattedDate}</h4>
+                                                            </div>
+
+                                                            {/* タイムラインの子ノード */}
+                                                            <div className="space-y-6 mt-6 ml-[15px] pl-8">
+                                                                {grouped[date].map(log => {
+                                                                    const [mainCat, subCat] = log.action.split(": ");
+                                                                    return (
+                                                                        <div key={log.id} className="relative border border-slate-100 bg-white rounded-lg p-5 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.1)] hover:shadow-md transition-shadow">
+                                                                            {/* ノードドット */}
+                                                                            <div className="absolute -left-[37px] top-6 w-[9px] h-[9px] rounded-full bg-primary/80 ring-4 ring-white shadow-sm" />
+
+                                                                            {editHistoryId === log.id ? (
+                                                                                <div className="space-y-3 mt-4">
+                                                                                    <textarea autoFocus value={editHistoryForm.detail} onChange={e => setEditHistoryForm({ ...editHistoryForm, detail: e.target.value })} className="w-full p-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white resize-y min-h-[60px]" placeholder="具体的な変更メモ (任意)" />
+                                                                                    <div className="flex gap-2 text-sm">
+                                                                                        <input type="text" value={editHistoryForm.before} onChange={e => setEditHistoryForm({ ...editHistoryForm, before: e.target.value })} className="flex-1 p-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white" placeholder="変更前 (任意)" />
+                                                                                        <input type="text" value={editHistoryForm.after} onChange={e => setEditHistoryForm({ ...editHistoryForm, after: e.target.value })} className="flex-1 p-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white" placeholder="変更後 (任意)" />
+                                                                                    </div>
+                                                                                    <div className="flex justify-end gap-2 pt-2">
+                                                                                        <button onClick={() => setEditHistoryId(null)} className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-200 bg-slate-100 rounded-md transition-colors">キャンセル</button>
+                                                                                        <button onClick={handleSaveHistory} className="px-4 py-1.5 text-xs font-medium text-white bg-primary hover:bg-primary/90 rounded-md flex items-center gap-1.5 shadow-sm transition-colors"><Icon name="Save" size={14} /> 保存</button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <div className="absolute right-3 top-3 opacity-80 hover:opacity-100 transition-opacity flex gap-2 z-10">
+                                                                                        <button onClick={() => { setEditHistoryId(log.id); setEditHistoryForm({ ...log }); }} className="px-3 py-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 shadow-sm rounded-md flex items-center gap-1 transition-all"><Icon name="Edit3" size={12} /> 編集</button>
+                                                                                        <button onClick={() => handleDeleteHistory(log.id)} className="px-3 py-1 text-[11px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/60 shadow-sm rounded-md flex items-center gap-1 transition-all"><Icon name="Trash2" size={12} /> 削除</button>
+                                                                                    </div>
+                                                                                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3 pr-32">
+                                                                                        <div className="flex items-center gap-3">
+                                                                                            <span className="font-semibold text-slate-900 text-sm flex items-center gap-1.5 bg-slate-100/80 px-2.5 py-1 rounded-md shadow-sm border border-slate-200/50">
+                                                                                                <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px]"><Icon name="User" size={10} /></div>
+                                                                                                {log.user}
+                                                                                            </span>
+                                                                                        </div>
+
+                                                                                        <div className="flex items-center gap-2 flex-wrap">
+                                                                                            {mainCat && (
+                                                                                                <button
+                                                                                                    onClick={() => { setHistoryFilterMainCat(mainCat); setHistoryFilterSubCat("all"); }}
+                                                                                                    className="font-medium text-[11px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-full px-2.5 py-0.5 whitespace-nowrap shadow-sm transition-colors border border-indigo-100/50"
+                                                                                                >
+                                                                                                    {mainCat}
+                                                                                                </button>
+                                                                                            )}
+                                                                                            {subCat && (
+                                                                                                <>
+                                                                                                    <Icon name="ChevronRight" size={12} className="text-slate-300" />
+                                                                                                    <button
+                                                                                                        onClick={() => { setHistoryFilterMainCat(mainCat); setHistoryFilterSubCat(subCat); }}
+                                                                                                        className="font-medium text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-full border border-slate-200 px-2.5 py-0.5 whitespace-nowrap shadow-sm transition-colors"
+                                                                                                    >
+                                                                                                        {subCat}
+                                                                                                    </button>
+                                                                                                </>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    {(log.before || log.after || log.detail) && (
+                                                                                        <div className="mt-4 text-sm text-slate-800 leading-relaxed bg-slate-50/70 rounded-md border border-slate-100/80 overflow-hidden">
+                                                                                            {(log.before || log.after) && (
+                                                                                                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 border-b border-slate-100/80 bg-white/50">
+                                                                                                    <div className="flex items-center gap-2 flex-1">
+                                                                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200/50">変更前</span>
+                                                                                                        <span className="font-medium text-slate-600 line-through decoration-slate-400">{log.before || "-"}</span>
+                                                                                                    </div>
+                                                                                                    <Icon name="ArrowRight" size={14} className="text-slate-300 hidden sm:block shrink-0" />
+                                                                                                    <div className="flex items-center gap-2 flex-1">
+                                                                                                        <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100/50">変更後</span>
+                                                                                                        <span className="font-bold text-emerald-700">{log.after || "-"}</span>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            )}
+                                                                                            {log.detail && <div className="p-3.5"><p>{log.detail}</p></div>}
+                                                                                        </div>
+                                                                                    )}
+                                                                                </>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* タブコンテンツ: 議事録 (Minutes) */}
+                    {activeTab === 'minutes' && (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                            <Card className="p-6 border-slate-200 bg-white shadow-sm">
+                                <h3 className="text-sm font-bold text-slate-900 mb-5 flex items-center gap-2">
+                                    <Icon name="FileEdit" size={18} className="text-primary" /> 新しい議事録を追加
+                                </h3>
+                                <form onSubmit={handleAddMinute} className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-slate-700 block">打ち合わせ日 <span className="text-red-500">*</span></label>
+                                            <input
+                                                type="date" required value={newMinuteDate} onChange={e => setNewMinuteDate(e.target.value)}
+                                                className="w-full px-4 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-slate-700 block">タイトル（会議のテーマ） <span className="text-red-500">*</span></label>
+                                            <input
+                                                type="text" required value={newMinuteTitle} onChange={e => setNewMinuteTitle(e.target.value)}
+                                                placeholder="例: 4月度定例ミーティング"
+                                                className="w-full px-4 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold text-slate-700 block">詳細議事録のURL（任意）</label>
+                                        <div className="relative">
+                                            <Icon name="Link" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input
+                                                type="url" value={newMinuteUrl} onChange={e => setNewMinuteUrl(e.target.value)}
+                                                placeholder="例: https://notion.so/..."
+                                                className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white transition-colors"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold text-slate-700 block">要約・決定事項（必須） <span className="text-red-500">*</span></label>
+                                        <textarea
+                                            required rows="4" value={newMinuteText} onChange={e => setNewMinuteText(e.target.value)}
+                                            placeholder="会議の要点や、決定したNext Actionを簡潔に入力してください..."
+                                            className="w-full px-4 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white resize-y"
+                                        />
+                                    </div>
+                                    <div className="text-right pt-2">
+                                        <button type="submit" className="bg-primary hover:bg-primary/90 text-white px-8 py-2.5 rounded-md font-medium text-sm flex items-center justify-center gap-2 ml-auto w-full md:w-auto shadow-sm transition-colors">
+                                            <Icon name="Save" size={16} /> 議事録を保存する
+                                        </button>
+                                    </div>
+                                </form>
+                            </Card>
+
+                            <div className="relative pl-4 border-l-2 border-slate-200/60 ml-4 pb-8 space-y-12 mt-8">
+                                {(() => {
+                                    const currentMinutes = supabase ? dbMinutesLogs : minutesLogs;
+                                    const grouped = currentMinutes.reduce((acc, log) => {
+                                        if (!acc[log.date]) acc[log.date] = [];
+                                        acc[log.date].push(log);
+                                        return acc;
+                                    }, {});
+                                    const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+
+                                    return sortedDates.map(date => {
+                                        const [y, m, d] = date.split('-');
+                                        const formattedDate = `${y}年${parseInt(m)}月${parseInt(d)}日`;
+
+                                        return (
+                                            <div key={date} className="relative">
+                                                <div className="flex items-center gap-4 relative z-10 -ml-[15px]">
+                                                    <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center border border-slate-200 shadow-sm text-slate-500">
+                                                        <Icon name="Calendar" size={14} />
+                                                    </div>
+                                                    <h4 className="font-bold text-slate-800 tracking-tight">{formattedDate}</h4>
+                                                </div>
+
+                                                <div className="space-y-6 mt-6 ml-[15px] pl-8">
+                                                    {grouped[date].map(log => (
+                                                        <div key={log.id} className="relative border border-slate-100 bg-white rounded-lg p-5 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.1)] hover:shadow-md transition-shadow group">
+                                                            <div className="absolute -left-[37px] top-6 w-[9px] h-[9px] rounded-full bg-primary/80 ring-4 ring-white shadow-sm" />
+                                                            {editMinuteId === log.id ? (
+                                                                <div className="space-y-4">
+                                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                        <div>
+                                                                            <label className="text-xs font-semibold text-slate-500 mb-1 block">打ち合わせ日</label>
+                                                                            <input type="date" value={editMinuteForm.date} onChange={e => setEditMinuteForm({ ...editMinuteForm, date: e.target.value })} className="w-full px-3 py-2 border rounded-md text-sm outline-none focus:border-primary" />
+                                                                        </div>
+                                                                        <div>
+                                                                            <label className="text-xs font-semibold text-slate-500 mb-1 block">タイトル</label>
+                                                                            <input type="text" value={editMinuteForm.title} onChange={e => setEditMinuteForm({ ...editMinuteForm, title: e.target.value })} className="w-full px-3 py-2 border rounded-md text-sm outline-none focus:border-primary" />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-semibold text-slate-500 mb-1 block">詳細議事録URL</label>
+                                                                        <input type="url" value={editMinuteForm.url} onChange={e => setEditMinuteForm({ ...editMinuteForm, url: e.target.value })} className="w-full px-3 py-2 border rounded-md text-sm outline-none focus:border-primary" placeholder="任意" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="text-xs font-semibold text-slate-500 mb-1 block">要約・決定事項</label>
+                                                                        <textarea value={editMinuteForm.detail} onChange={e => setEditMinuteForm({ ...editMinuteForm, detail: e.target.value })} className="w-full px-3 py-2 border rounded-md text-sm outline-none focus:border-primary min-h-[100px]" />
+                                                                    </div>
+                                                                    <div className="flex justify-end gap-2 pt-2">
+                                                                        <button onClick={() => setEditMinuteId(null)} className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-200 bg-slate-100 rounded-md transition-colors">キャンセル</button>
+                                                                        <button onClick={handleSaveMinute} className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md flex items-center gap-2 transition-colors"><Icon name="Save" size={16} /> 保存</button>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="absolute right-3 top-3 opacity-80 hover:opacity-100 transition-opacity flex gap-2 z-10">
+                                                                        <button onClick={() => { setEditMinuteId(log.id); setEditMinuteForm({ ...log }); }} className="px-3 py-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 shadow-sm rounded-md flex items-center gap-1.5 transition-all"><Icon name="Edit3" size={14} /> 編集</button>
+                                                                        <button onClick={() => handleDeleteMinute(log.id)} className="px-3 py-1.5 text-[11px] font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/60 shadow-sm rounded-md flex items-center gap-1.5 transition-all"><Icon name="Trash2" size={14} /> 削除</button>
+                                                                    </div>
+                                                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 border-b border-slate-100 pb-4 pr-32">
+                                                                        <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2 max-w-full">
+                                                                            <Icon name="BookOpen" size={18} className="text-slate-400 shrink-0" />
+                                                                            <span className="truncate">{log.title}</span>
+                                                                        </h4>
+                                                                        <div className="flex items-center gap-3 text-xs text-slate-500 shrink-0">
+                                                                            {/* Date is removed from here since it's the timeline node */}
+                                                                            <span className="flex items-center gap-1"><Icon name="User" size={12} /> {log.user}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-sm text-slate-800 leading-[1.8] whitespace-pre-wrap break-words bg-slate-50/50 p-4 rounded-md border border-slate-100">
+                                                                        {log.detail}
+                                                                    </div>
+                                                                    {log.url && (
+                                                                        <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+                                                                            <a href={log.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/5 hover:bg-primary/10 px-4 py-2 rounded-full transition-colors border border-primary/10">
+                                                                                <Icon name="ExternalLink" size={14} /> 詳細な議事録を開く
+                                                                            </a>
+                                                                        </div>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    });
+                                })()}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* タブコンテンツ: アカウント情報 (Info) */}
+                    {activeTab === 'info' && (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+
+                            {/* Sub-tabs Navigation */}
+                            <div className="flex flex-wrap gap-3 border-b border-slate-200 pb-4">
+                                {[
+                                    { id: 'basic', label: '基本情報', icon: 'Info' },
+                                    { id: 'links', label: '集客リンク・SNS', icon: 'Link' },
+                                    { id: 'ad', label: '広告設定・KPI', icon: 'BarChart2' },
+                                    { id: 'creative', label: 'クリエイティブ素材', icon: 'Image' }
+                                ].map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveInfoTab(tab.id)}
+                                        className={`flex items-center gap-1.5 px-5 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${activeInfoTab === tab.id ? 'bg-slate-800 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 border-b-2 border-b-transparent hover:border-b-slate-200'}`}
+                                    >
+                                        <Icon name={tab.icon} size={14} className={activeInfoTab === tab.id ? 'text-slate-300' : 'text-slate-400'} /> {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* 1. 基本情報 */}
+                            {activeInfoTab === 'basic' && (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    {/* Card 1: 担当者・連絡先 (Contacts) */}
+                                    <Card className="p-5 border-slate-200 bg-white shadow-sm relative h-fit hover:shadow-md transition-shadow">
+                                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                                            <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                                                <Icon name="Users" size={16} className="text-blue-500" /> 担当者・連絡先
+                                            </h4>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <div className="text-xs font-semibold text-slate-500 mb-1">内部担当者</div>
+                                                {editingInfoField === 'assignee' ? (
+                                                    <input autoFocus type="text" value={clientInfo.assignee} onChange={e => setClientInfo({ ...clientInfo, assignee: e.target.value })} onBlur={handleInfoSave} onKeyDown={e => e.key === 'Enter' && handleInfoSave()} className="w-full px-2 py-1 border rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20" />
+                                                ) : (
+                                                    <div onClick={() => setEditingInfoField('assignee')} className="text-sm font-medium text-slate-800 cursor-pointer hover:bg-slate-50 hover:text-primary p-2 -m-2 rounded transition-colors group flex items-center justify-between border border-transparent hover:border-slate-200">
+                                                        <span>{clientInfo.assignee || <span className="text-slate-400 font-normal">未設定</span>}</span>
+                                                        <span className="text-xs font-normal text-slate-600 bg-white shadow-sm border border-slate-200 py-0.5 px-2 flex items-center gap-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shrink-0"><Icon name="Edit3" size={12} /> 編集</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <div className="text-xs font-semibold text-slate-500 mb-1">クライアント窓口</div>
+                                                {editingInfoField === 'clientContact' ? (
+                                                    <input autoFocus type="text" value={clientInfo.clientContact} onChange={e => setClientInfo({ ...clientInfo, clientContact: e.target.value })} onBlur={handleInfoSave} onKeyDown={e => e.key === 'Enter' && handleInfoSave()} className="w-full px-2 py-1 border rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20" />
+                                                ) : (
+                                                    <div onClick={() => setEditingInfoField('clientContact')} className="text-sm font-medium text-slate-800 cursor-pointer hover:bg-slate-50 hover:text-primary p-2 -m-2 rounded transition-colors group flex items-center justify-between border border-transparent hover:border-slate-200">
+                                                        <span>{clientInfo.clientContact || <span className="text-slate-400 font-normal">未設定</span>}</span>
+                                                        <span className="text-xs font-normal text-slate-600 bg-white shadow-sm border border-slate-200 py-0.5 px-2 flex items-center gap-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shrink-0"><Icon name="Edit3" size={12} /> 編集</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Card>
+
+                                    {/* Card 2: ビジネス & ターゲット (Business) */}
+                                    <Card className="p-5 border-slate-200 bg-white shadow-sm relative h-fit hover:shadow-md transition-shadow">
+                                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                                            <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                                                <Icon name="Target" size={16} className="text-emerald-500" /> ビジネス & ターゲット
+                                            </h4>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <div className="text-xs font-semibold text-slate-500 mb-1">ビジネス詳細</div>
+                                                {editingInfoField === 'businessDetails' ? (
+                                                    <textarea autoFocus rows="3" value={clientInfo.businessDetails} onChange={e => setClientInfo({ ...clientInfo, businessDetails: e.target.value })} onBlur={handleInfoSave} className="w-full px-2 py-1 border rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 resize-y" />
+                                                ) : (
+                                                    <div onClick={() => setEditingInfoField('businessDetails')} className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap cursor-pointer hover:bg-slate-50 hover:text-primary p-2 -m-2 rounded transition-colors group flex relative border border-transparent hover:border-slate-200 min-h-[4rem]">
+                                                        <span>{clientInfo.businessDetails || <span className="text-slate-400">未設定</span>}</span>
+                                                        <span className="text-xs font-normal text-slate-600 bg-white shadow-sm border border-slate-200 py-0.5 px-2 flex items-center gap-1 rounded opacity-0 group-hover:opacity-100 transition-opacity absolute right-1 top-1 whitespace-nowrap"><Icon name="Edit3" size={12} /> 編集</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <div className="text-xs font-semibold text-slate-500 mb-1.5">主要サービス</div>
+                                                {editingInfoField === 'services' ? (
+                                                    <input autoFocus type="text" value={clientInfo.services} onChange={e => setClientInfo({ ...clientInfo, services: e.target.value })} onBlur={handleInfoSave} onKeyDown={e => e.key === 'Enter' && handleInfoSave()} placeholder="カンマ区切りで入力" className="w-full px-2 py-1 border rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20" />
+                                                ) : (
+                                                    <div onClick={() => setEditingInfoField('services')} className="cursor-pointer hover:bg-slate-50 p-2 -m-2 rounded transition-colors group relative border border-transparent hover:border-slate-200 min-h-[40px] flex items-start justify-between">
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {clientInfo.services ? clientInfo.services.split(',').filter(s => s.trim() !== "").map((service, idx) => (
+                                                                <span key={idx} className="text-xs font-medium bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full border border-emerald-100 whitespace-nowrap">
+                                                                    {service.trim()}
+                                                                </span>
+                                                            )) : <span className="text-slate-400 text-sm">未設定</span>}
+                                                        </div>
+                                                        <span className="text-xs font-normal text-slate-600 bg-white shadow-sm border border-slate-200 py-0.5 px-2 flex items-center gap-1 rounded opacity-0 group-hover:opacity-100 transition-opacity absolute right-1 top-1/2 -translate-y-1/2 whitespace-nowrap shrink-0"><Icon name="Edit3" size={12} /> 編集</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </div>
+                            )}
+
+                            {/* 2. 集客リンク・SNS */}
+                            {activeInfoTab === 'links' && (
+                                <div className="grid grid-cols-1 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    {/* Card 5: Webサイト & 外部リンク (Web Links) */}
+                                    <Card className="p-5 border-slate-200 bg-white shadow-sm relative h-fit hover:shadow-md transition-shadow">
+                                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                                            <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                                                <Icon name="Globe" size={16} className="text-slate-500" /> Web & 外部リンク
+                                            </h4>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {[
+                                                { id: 'websiteUrl', label: 'メインWebサイト/LP', icon: null, iconColor: '' },
+                                                { id: 'hotpepperUrl', label: 'ホットペッパー', icon: 'Scissors', iconColor: 'text-orange-500' },
+                                                { id: 'lineUrl', label: 'LINE公式アカウント', icon: 'MessageCircle', iconColor: 'text-emerald-500' },
+                                                { id: 'instagramUrl', label: 'Instagram', icon: 'Instagram', iconColor: 'text-pink-600' }
+                                            ].map(link => (
+                                                <div key={link.id}>
+                                                    <div className="text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1">
+                                                        {link.icon && <Icon name={link.icon} size={12} className={link.iconColor} />}
+                                                        {link.label}
+                                                    </div>
+                                                    {editingInfoField === link.id ? (
+                                                        <input autoFocus type="url" value={clientInfo[link.id]} onChange={e => setClientInfo({ ...clientInfo, [link.id]: e.target.value })} onBlur={handleInfoSave} onKeyDown={e => e.key === 'Enter' && handleInfoSave()} className="w-full px-2 py-1 border rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20" />
+                                                    ) : (
+                                                        <div onClick={() => setEditingInfoField(link.id)} className="text-sm truncate w-full cursor-pointer hover:bg-slate-50 p-2 -m-2 rounded transition-colors group flex items-center justify-between border border-transparent hover:border-slate-200 min-h-[32px]">
+                                                            {clientInfo[link.id] ? <a href={clientInfo[link.id]} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-blue-600 hover:underline flex items-center gap-1.5 truncate"><Icon name="ExternalLink" size={12} className="shrink-0 text-blue-400" /><span className="truncate">{clientInfo[link.id]}</span></a> : <span className="text-slate-400">未設定</span>}
+                                                            <span className="text-xs font-normal text-slate-600 bg-white shadow-sm border border-slate-200 py-0.5 px-2 flex items-center gap-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shrink-0 ml-2"><Icon name="Edit3" size={12} /> 編集</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </Card>
+                                </div>
+                            )}
+
+                            {/* 3. 広告設定・KPI */}
+                            {activeInfoTab === 'ad' && (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    {/* Card 3: 広告設定 & KPI (Ad Platforms) */}
+                                    <Card className="p-5 border-slate-200 bg-white shadow-sm relative h-fit hover:shadow-md transition-shadow">
+                                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                                            <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                                                <Icon name="BarChart2" size={16} className="text-indigo-500" /> 広告設定 & KPI
+                                            </h4>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <div className="text-xs font-semibold text-slate-500 mb-1 text-indigo-700">Meta Pixel ID</div>
+                                                {editingInfoField === 'pixelId' ? (
+                                                    <input autoFocus type="text" value={clientInfo.pixelId} onChange={e => setClientInfo({ ...clientInfo, pixelId: e.target.value })} onBlur={handleInfoSave} onKeyDown={e => e.key === 'Enter' && handleInfoSave()} className="w-full px-2 py-1 border rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-mono" />
+                                                ) : (
+                                                    <div onClick={() => setEditingInfoField('pixelId')} className="text-sm font-mono text-slate-800 break-all cursor-pointer hover:bg-slate-50 hover:text-primary p-2 -m-2 rounded transition-colors group flex justify-between items-center border border-transparent hover:border-slate-200">
+                                                        <span>{clientInfo.pixelId || <span className="text-slate-400 font-sans">未設定</span>}</span>
+                                                        <span className="text-xs font-normal text-slate-600 bg-white shadow-sm border border-slate-200 py-0.5 px-2 flex items-center gap-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shrink-0 ml-2"><Icon name="Edit3" size={12} /> 編集</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <div className="text-xs font-semibold text-slate-500 mb-1">目標CPA</div>
+                                                {editingInfoField === 'infoTargetCpa' ? (
+                                                    <input autoFocus type="text" value={clientInfo.targetCpa} onChange={e => setClientInfo({ ...clientInfo, targetCpa: e.target.value })} onBlur={handleInfoSave} onKeyDown={e => e.key === 'Enter' && handleInfoSave()} className="w-full px-2 py-1 border rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-medium" />
+                                                ) : (
+                                                    <div onClick={() => setEditingInfoField('infoTargetCpa')} className="text-sm font-bold text-slate-800 cursor-pointer hover:bg-slate-50 hover:text-primary p-2 -m-2 rounded transition-colors group flex justify-between items-center border border-transparent hover:border-slate-200">
+                                                        <span>{clientInfo.targetCpa || <span className="text-slate-400 font-normal">未設定</span>}</span>
+                                                        <span className="text-xs font-normal text-slate-600 bg-white shadow-sm border border-slate-200 py-0.5 px-2 flex items-center gap-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shrink-0 ml-2"><Icon name="Edit3" size={12} /> 編集</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </div>
+                            )}
+
+                            {/* 4. クリエイティブ素材 */}
+                            {activeInfoTab === 'creative' && (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                    {/* Card 4: クリエイティブ & 素材 (Creative) */}
+                                    <Card className="p-5 border-slate-200 bg-white shadow-sm relative h-fit hover:shadow-md transition-shadow">
+                                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                                            <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                                                <Icon name="Image" size={16} className="text-amber-500" /> クリエイティブ & 素材
+                                            </h4>
+                                        </div>
+                                        <div className="space-y-4">
+                                            {[
+                                                { id: 'assetUrl', label: '素材保管先 (Google Drive等)' },
+                                                { id: 'guidelineUrl', label: 'ブランドガイドライン' }
+                                            ].map(link => (
+                                                <div key={link.id}>
+                                                    <div className="text-xs font-semibold text-slate-500 mb-1">{link.label}</div>
+                                                    {editingInfoField === link.id ? (
+                                                        <input autoFocus type="url" value={clientInfo[link.id]} onChange={e => setClientInfo({ ...clientInfo, [link.id]: e.target.value })} onBlur={handleInfoSave} onKeyDown={e => e.key === 'Enter' && handleInfoSave()} className="w-full px-2 py-1 border rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20" />
+                                                    ) : (
+                                                        <div onClick={() => setEditingInfoField(link.id)} className="text-sm truncate w-full cursor-pointer hover:bg-slate-50 p-2 -m-2 rounded transition-colors group flex items-center justify-between border border-transparent hover:border-slate-200 min-h-[32px]">
+                                                            {clientInfo[link.id] ? <a href={clientInfo[link.id]} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-blue-600 hover:underline flex items-center gap-1"><Icon name="ExternalLink" size={12} className="shrink-0" /><span className="truncate">{clientInfo[link.id]}</span></a> : <span className="text-slate-400">未設定</span>}
+                                                            <span className="text-xs font-normal text-slate-600 bg-white shadow-sm border border-slate-200 py-0.5 px-2 flex items-center gap-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shrink-0 ml-2"><Icon name="Edit3" size={12} /> 編集</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </Card>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )
+        };
+
+        const App = () => {
+            const [clients, setClients] = useState([]);
+            const [isLoading, setIsLoading] = useState(true);
+            const [view, setView] = useState("clientList");
+            const [selectedClient, setSelectedClient] = useState(null);
+
+            useEffect(() => {
+                const fetchClients = async () => {
+                    if (!supabase) {
+                        setClients(initialClientsMock);
+                        setIsLoading(false);
+                        return;
+                    }
+                    try {
+                        const { data, error } = await supabase.from('clients').select('*');
+                        if (error) throw error;
+
+                        const mapped = data.map(c => ({
+                            id: c.id,
+                            name: c.name,
+                            assignee: c.assignee,
+                            status: c.status || 'active',
+                            budget: c.budget || 0,
+                            targetCpa: c.target_cpa || 0,
+                            limitCpa: c.limit_cpa || 0,
+                            plan: c.plan,
+                            contractDate: c.contract_date,
+                            representativeName: c.representative_name,
+                            businessDetails: c.business_details,
+                            mainServices: c.main_services,
+                            urlWebsite: c.url_website,
+                            urlHotpepper: c.url_hotpepper,
+                            urlLine: c.url_line,
+                            urlInstagram: c.url_instagram,
+                            pixelId: c.pixel_id,
+                            urlDrive: c.url_drive,
+                            urlGuideline: c.url_guideline,
+                            // defaults for list view if no metrics yet
+                            spend: 0, prevSpend: 0, cvs: 0, prevCvs: 0, cpa: 0, clicks: 0, impressions: 0, historyCvs: []
+                        }));
+                        setClients(mapped.length > 0 ? mapped : initialClientsMock);
+                    } catch (err) {
+                        console.error('Error', err);
+                        setClients(initialClientsMock);
+                    } finally {
+                        setIsLoading(false);
+                    }
+                };
+                fetchClients();
+            }, []);
+
+            const handleSelectClient = (client) => {
+                setSelectedClient(client);
+                setView("dashboard");
+            };
+            const handleBackToList = () => {
+                setView("clientList");
+                setSelectedClient(null);
+            };
+            const handleAddNew = () => setView("addClient");
+            const handleSaveNewClient = (newClient) => {
+                setClients(prev => [newClient, ...prev]);
+                setView("clientList");
+            };
+
+            return (
+                <div className="min-h-screen flex text-slate-900 bg-slate-50">
+                    <aside className="w-64 border-r border-slate-200 bg-white hidden md:flex flex-col flex-shrink-0 relative">
+                        <div className="p-6 h-16 flex items-center border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors" onClick={handleBackToList}>
+                            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                                <span className="bg-primary text-primary-foreground p-1 rounded-md shadow-sm">
+                                    <Icon name="Activity" size={20} />
+                                </span>
+                                AdManager
+                            </h1>
+                        </div>
+                        <nav className="p-4 space-y-1 flex-1">
+                            <button onClick={handleBackToList} className={`w-full flex items-center gap-3 px-3 py-2 rounded-md font-medium transition-colors ${view === 'clientList' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                <Icon name="Users" size={18} className={view === 'clientList' ? "text-slate-700" : "text-slate-400"} />
+                                クライアント一覧
+                            </button>
+                            <button onClick={handleAddNew} className={`w-full flex items-center gap-3 px-3 py-2 rounded-md font-medium transition-colors ${view === 'addClient' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                <Icon name="PlusCircle" size={18} className={view === 'addClient' ? "text-primary" : "text-slate-400"} />
+                                新規登録
+                            </button>
+                        </nav>
+                    </aside>
+                    <main className="flex-1 p-6 md:p-8 lg:p-10 max-w-7xl mx-auto w-full overflow-x-hidden">
+                        {view === "clientList" && <ClientList clients={clients} onSelectClient={handleSelectClient} onAddNew={handleAddNew} onUpdateClient={(updated) => { setClients(prev => prev.map(c => c.id === updated.id ? updated : c)); setSelectedClient(updated); }} />}
+                        {view === "dashboard" && selectedClient && <DashboardDetail client={selectedClient} onBack={handleBackToList} onUpdateClient={(updated) => { setClients(prev => prev.map(c => c.id === updated.id ? updated : c)); setSelectedClient(updated); }} />}
+                        {view === "addClient" && <AddClientForm onSave={handleSaveNewClient} onCancel={handleBackToList} />}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ErrorBoundary><App /></ErrorBoundary>);
     </script>
 </body>
 

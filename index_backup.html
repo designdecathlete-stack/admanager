@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meta広告 統合管理ダッシュボード</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              border: "hsl(var(--border))",
+              input: "hsl(var(--input))",
+              ring: "hsl(var(--ring))",
+              background: "hsl(var(--background))",
+              foreground: "hsl(var(--foreground))",
+              primary: { DEFAULT: "hsl(222.2 47.4% 11.2%)", foreground: "hsl(210 40% 98%)" },
+              secondary: { DEFAULT: "hsl(210 40% 96.1%)", foreground: "hsl(222.2 47.4% 11.2%)" },
+              destructive: { DEFAULT: "hsl(0 84.2% 60.2%)", foreground: "hsl(210 40% 98%)" },
+              muted: { DEFAULT: "hsl(210 40% 96.1%)", foreground: "hsl(215.4 16.3% 46.9%)" },
+              accent: { DEFAULT: "hsl(210 40% 96.1%)", foreground: "hsl(222.2 47.4% 11.2%)" },
+            }
+          }
+        }
+      }
+    </script>
+    <style type="text/tailwindcss">
+      @layer base {
+        :root {
+          --background: 0 0% 100%;
+          --foreground: 222.2 84% 4.9%;
+          --card: 0 0% 100%;
+          --card-foreground: 222.2 84% 4.9%;
+          --popover: 0 0% 100%;
+          --popover-foreground: 222.2 84% 4.9%;
+          --primary: 222.2 47.4% 11.2%;
+          --primary-foreground: 210 40% 98%;
+          --secondary: 210 40% 96.1%;
+          --secondary-foreground: 222.2 47.4% 11.2%;
+          --muted: 210 40% 96.1%;
+          --muted-foreground: 215.4 16.3% 46.9%;
+          --accent: 210 40% 96.1%;
+          --accent-foreground: 222.2 47.4% 11.2%;
+          --destructive: 0 84.2% 60.2%;
+          --destructive-foreground: 210 40% 98%;
+          --border: 214.3 31.8% 91.4%;
+          --input: 214.3 31.8% 91.4%;
+          --ring: 222.2 84% 4.9%;
+          --radius: 0.5rem;
+        }
+      }
+      body {
+        @apply bg-slate-50 text-foreground antialiased font-sans;
+      }
+      /* Custom Scrollbar for Tabs */
+      .no-scrollbar::-webkit-scrollbar {
+          display: none;
+      }
+      .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+      }
+    </style>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div id="root">
+        <div style="padding: 20px; text-align: center; color: #666; font-family: sans-serif;">
+            Loading Application...
+        </div>
+    </div>
+
+    <script type="text/babel">
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+            static getDerivedStateFromError(error) { return { hasError: true, error }; }
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div style={{ padding: '2rem', color: '#ef4444', backgroundColor: '#fef2f2', minHeight: '100vh', fontFamily: 'sans-serif' }}>
+                            <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>Application Error</h1>
+                            <pre style={{ whiteSpace: 'pre-wrap', backgroundColor: '#fee2e2', padding: '1rem', borderRadius: '0.5rem' }}>
+                                {this.state.error && this.state.error.toString()}
+                            </pre>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
+        const { useState, useEffect, useMemo } = React;
+
+        const getLucideIcon = (name) => {
+            if (!window.lucide) return null;
+            if (window.lucide.icons && window.lucide.icons[name]) return window.lucide.icons[name];
+            if (window.lucide[name]) return window.lucide[name];
+            return null;
+        };
+
+        const Icon = ({ name, size = 20, className = "" }) => {
+            const iconRef = React.useRef(null);
+            const [hasError, setHasError] = useState(false);
+
+            useEffect(() => {
+                try {
+                    const iconObj = getLucideIcon(name);
+                    if (iconObj && typeof iconObj.toSvg === 'function' && iconRef.current) {
+                        iconRef.current.innerHTML = iconObj.toSvg({ width: size, height: size, class: className });
+                    }
+                } catch (e) {
+                    setHasError(true);
+                }
+            }, [name, size, className]);
+
+            if (hasError) return <span className="inline-block w-4 h-4 bg-red-200"></span>;
+            return <i ref={iconRef} className={`inline-flex items-center justify-center ${className}`} />;
+        };
+
+        const Card = ({ children, className = "" }) => (
+             <div className={`rounded-xl border bg-card text-card-foreground shadow-sm bg-white ${className}`}>{children}</div>
+        );
+
+        const Badge = ({ children, variant = "default", className = "" }) => {
+            const variants = {
+                default: "bg-primary text-primary-foreground",
+                active: "bg-emerald-100 text-emerald-800 border-emerald-200",
+                paused: "bg-slate-100 text-slate-800 border-slate-200",
+                rejected: "bg-red-100 text-red-600 border-red-200",
+                alert: "bg-amber-100 text-amber-800 border-amber-200",
+                secondary: "bg-slate-100 text-slate-700 border border-slate-200",
+            };
+            return (
+                <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold flex-shrink-0 ${variants[variant] || variants.default} ${className}`}>
+                    {children}
+                </span>
+            );
+        };
+
+        const formatCurrency = (val) => new Intl.NumberFormat("ja-JP", { style: "currency", currency: "JPY" }).format(val);
+        const formatNumber = (val) => new Intl.NumberFormat("ja-JP").format(val);
+        const formatDecimal = (val) => new Intl.NumberFormat("ja-JP", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
+        const formatPercent = (val) => new Intl.NumberFormat("ja-JP", { style: "percent", minimumFractionDigits: 2 }).format(val/100);
+
+        const initialClientsMock = [
+            { id: "cl1", name: "株式会社アルファ", status: "active", adAccountId: "act_1001", budget: 2000000, targetCpa: 3000, limitCpa: 4500, targetCvs: 600, spend: 1250000, prevSpend: 1100000, cvs: 500, prevCvs: 450, cpa: 2500, assignee: "佐藤担当", clicks: 12500, prevClicks: 11000 },
+            { id: "cl2", name: "ベータクリニック", status: "alert",   adAccountId: "act_2041", budget: 1500000, targetCpa: 8000, limitCpa: 10000, targetCvs: 180,  spend: 850000, prevSpend: 880000, cvs: 85, prevCvs: 95, cpa: 10000, assignee: "鈴木担当", clicks: 8200, prevClicks: 8500 },
+            // ... (other mocks kept short for simplicity)
+        ];
+
+        const generateClientData = (client) => {
+            const baseSpend = client.spend || client.budget * 0.5;
+            const baseCvs = client.cvs || client.targetCvs * 0.5;
+            return [
+                {
+                    id: `${client.id}-c1`, name: "リターゲティング_配信", level: 0, status: client.status === 'rejected' ? 'rejected' : "active",
+                    spend: baseSpend * 0.6, impressions: 800000, clicks: 8000, ctr: 1.0, cpa: (baseSpend * 0.6) / (baseCvs * 0.7) || 0, cvs: Math.floor(baseCvs * 0.7),
+                    children: [
+                        {
+                            id: `${client.id}-as1`, name: "全体訪問者_30日", level: 1, status: client.status === 'rejected' ? 'rejected' : "active",
+                            spend: baseSpend * 0.6, impressions: 800000, clicks: 8000, ctr: 1.0, cpa: (baseSpend * 0.6) / (baseCvs * 0.7) || 0, cvs: Math.floor(baseCvs * 0.7),
+                            children: [
+                                { id: `${client.id}-ad1`, name: "バナーA_割引訴求", level: 2, status: "active", spend: baseSpend * 0.4, impressions: 500000, clicks: 5000, ctr: 1.0, cpa: 0, cvs: Math.floor(baseCvs * 0.5) },
+                                { id: `${client.id}-ad2`, name: "バナーB_ブランディング", level: 2, status: client.status === 'rejected' ? 'rejected' : "active", spend: baseSpend * 0.2, impressions: 300000, clicks: 3000, ctr: 1.0, cpa: 0, cvs: Math.floor(baseCvs * 0.2) }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: `${client.id}-c2`, name: "ブロード配信_新規獲得", level: 0, status: client.status === 'rejected' ? "rejected" : "active",
+                    spend: baseSpend * 0.4, impressions: 1500000, clicks: 5000, ctr: 0.33, cpa: (baseSpend * 0.4) / (baseCvs * 0.3) || 0, cvs: Math.floor(baseCvs * 0.3),
+                    children: []
+                }
+            ];
+        };
+
+        const AddClientForm = ({ onSave, onCancel }) => {
+            // Unchanged for brevity
+            const [formData, setFormData] = useState({ name: "", adAccountId: "", budget: "", targetCpa: "", limitCpa: "", targetCvs: "" });
+            const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (!formData.name || !formData.adAccountId) return;
+                onSave({ id: `cl${Date.now()}`, ...formData, budget: parseInt(formData.budget) || 0, targetCpa: parseInt(formData.targetCpa) || 0, limitCpa: parseInt(formData.limitCpa) || 0, targetCvs: parseInt(formData.targetCvs) || 0, spend: 0, prevSpend: 0, cvs: 0, prevCvs: 0, cpa: 0, clicks: 0, prevClicks: 0, status: "paused" });
+            };
+            return (
+                <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <header className="mb-6 pb-4 border-b border-slate-200 flex items-center gap-4">
+                        <button onClick={onCancel} className="text-slate-400 hover:text-slate-900 transition-colors p-2 -ml-2 rounded-full hover:bg-slate-100"><Icon name="ArrowLeft" size={20} /></button>
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-900">新規クライアント登録</h2>
+                            <p className="text-sm text-slate-500 mt-1">配信を管理する新しいMeta広告アカウントの情報を登録します。</p>
+                        </div>
+                    </header>
+                    <form onSubmit={handleSubmit}>
+                        <Card className="p-6 space-y-8">
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-2"><label className="text-sm font-medium">クライアント名 *</label><input required name="name" value={formData.name} onChange={handleChange} className="w-full px-3 py-2 border rounded-md text-sm" /></div>
+                                <div className="space-y-2"><label className="text-sm font-medium">アカウントID *</label><input required name="adAccountId" value={formData.adAccountId} onChange={handleChange} className="w-full px-3 py-2 border rounded-md text-sm" /></div>
+                                <div className="space-y-2"><label className="text-sm font-medium">予算</label><input type="number" name="budget" value={formData.budget} onChange={handleChange} className="w-full px-3 py-2 border rounded-md text-sm" /></div>
+                                <div className="space-y-2"><label className="text-sm font-medium">限界CPA</label><input type="number" name="limitCpa" value={formData.limitCpa} onChange={handleChange} className="w-full px-3 py-2 border rounded-md text-sm" /></div>
+                            </div>
+                            <div className="flex justify-end gap-3"><button type="submit" className="bg-primary text-white px-6 py-2 rounded-md">保存</button></div>
+                        </Card>
+                    </form>
+                </div>
+            )
+        };
+
+        const ClientList = ({ clients, onSelectClient, onAddNew }) => {
+            const [search, setSearch] = useState("");
+            const [assigneeFilter, setAssigneeFilter] = useState("all");
+            
+            const CompBadge = ({ cur, prev, reverseColor = false }) => {
+                if (!prev) return <div className="text-[10px] text-slate-400 mt-0.5 min-h-[16px]">-</div>;
+                const diff = cur - prev;
+                if (diff === 0) return <div className="text-[10px] text-slate-400 mt-0.5 flex items-center justify-end gap-0.5 relative z-10"><Icon name="Minus" size={10} /> 0%</div>;
+                const pct = ((diff / prev) * 100).toFixed(1);
+                const color = diff > 0 ? (reverseColor ? "text-red-500" : "text-emerald-500") : (reverseColor ? "text-emerald-500" : "text-red-500");
+                const icon = diff > 0 ? "TrendingUp" : "TrendingDown";
+                return (
+                    <div className={`text-[11px] font-bold mt-0.5 flex items-center justify-end gap-0.5 relative z-10 ${color}`}>
+                        <Icon name={icon} size={12} /> {Math.abs(pct)}%
+                    </div>
+                );
+            };
+
+            const uniqueAssignees = Array.from(new Set(clients.map(c => c.assignee).filter(Boolean)));
+            
+            const filtered = clients.filter(c => {
+                const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || (c.adAccountId && c.adAccountId.includes(search));
+                const matchAssignee = assigneeFilter === "all" || c.assignee === assigneeFilter;
+                return matchSearch && matchAssignee;
+            });
+
+            return (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="flex justify-between items-center gap-4">
+                        <h2 className="text-2xl font-bold tracking-tight text-slate-900">クライアント一覧</h2>
+                        <div className="flex items-center gap-3">
+                            <div className="relative border border-slate-200 rounded-md">
+                                <select 
+                                    value={assigneeFilter} 
+                                    onChange={(e) => setAssigneeFilter(e.target.value)} 
+                                    className="pl-3 pr-8 py-2 w-full text-sm block appearance-none bg-white rounded-md focus:outline-none focus:border-primary font-medium text-slate-700"
+                                >
+                                    <option value="all">全担当者</option>
+                                    {uniqueAssignees.map(a => <option key={a} value={a}>{a}</option>)}
+                                </select>
+                                <Icon name="Filter" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            </div>
+                            <input type="text" placeholder="キーワード検索" className="pl-3 pr-4 py-2 border border-slate-200 rounded-md text-sm min-w-[200px]" value={search} onChange={(e) => setSearch(e.target.value)} />
+                            <button onClick={onAddNew} className="bg-primary text-primary-foreground px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2"><Icon name="Plus" size={16} /> 新規登録</button>
+                        </div>
+                    </div>
+                    <Card className="overflow-hidden">
+                        <table className="w-full text-sm text-left whitespace-nowrap">
+                            <thead className="bg-slate-50 border-b text-slate-500 font-medium">
+                                <tr><th className="px-6 py-4">名前</th><th className="px-4 py-4">ステータス</th><th className="px-4 py-4">担当</th><th className="px-4 py-4 text-right">予算</th><th className="px-4 py-4 text-right">消化</th><th className="px-4 py-4 text-right">クリック数</th><th className="px-4 py-4 text-right">結果</th><th className="px-4 py-4 text-center">操作</th></tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map(client => (
+                                    <tr key={client.id} className="border-b hover:bg-slate-50 transition-colors">
+                                        <td className="px-6 py-4 font-medium align-middle">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-md bg-slate-100 text-slate-600 flex items-center justify-center text-sm font-bold shadow-sm border border-slate-200">{client.name.charAt(0)}</div>
+                                                {client.name}
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-4 align-middle">
+                                            {client.status === 'active' && <Badge variant="active">配信中</Badge>}
+                                            {client.status === 'alert' && <Badge variant="alert">アラート</Badge>}
+                                            {client.status === 'paused' && <Badge variant="paused">停止中</Badge>}
+                                            {client.status === 'rejected' && <Badge variant="rejected">審査エラー</Badge>}
+                                        </td>
+                                        <td className="px-4 py-4 text-slate-600 font-medium align-middle">{client.assignee || <span className="text-slate-400 font-normal">未設定</span>}</td>
+                                        <td className="px-4 py-4 text-right align-middle">{formatCurrency(client.budget)}</td>
+                                        <td className="px-4 py-4 text-right align-middle">
+                                            <div className="font-medium text-slate-900">{formatCurrency(client.spend)}</div>
+                                            <CompBadge cur={client.spend} prev={client.prevSpend} reverseColor={true} />
+                                        </td>
+                                        <td className="px-4 py-4 text-right align-middle">
+                                            <div className="font-medium text-slate-900">{formatNumber(client.clicks || 0)}</div>
+                                            <CompBadge cur={client.clicks || 0} prev={client.prevClicks || 0} />
+                                        </td>
+                                        <td className="px-4 py-4 text-right align-middle">
+                                            <div className="font-bold text-slate-900">{formatNumber(client.cvs || 0)}</div>
+                                            <CompBadge cur={client.cvs || 0} prev={client.prevCvs || 0} />
+                                        </td>
+                                        <td className="px-4 py-4 text-center align-middle">
+                                            <button onClick={() => onSelectClient(client)} className="mx-auto bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded-md font-medium text-sm flex items-center justify-center gap-1 shadow-sm transition-colors w-full">
+                                                詳細を開く <Icon name="ChevronRight" size={14}/>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </Card>
+                </div>
+            )
+        };
+
+        const HISTORY_MENU = {
+            "広告設定": ["予算調整", "ターゲティング変更", "オーディエンス追加", "配信ステータス変更", "入札戦略変更", "その他"],
+            "クリエイティブ": ["画像/動画の追加", "メインテキスト変更", "見出し変更", "画像/動画の差し替え・停止", "その他"],
+            "リンク先": ["遷移先URL変更", "UTMパラメータ追加・変更", "遷移先停止/差し替え", "その他"]
+        };
+
+        const DashboardDetail = ({ client, onBack, onUpdateClient }) => {
+            const data = useMemo(() => generateClientData(client), [client]);
+            const [expandedRows, setExpandedRows] = useState(new Set([`${client.id}-c1`, `${client.id}-as1`]));
+            const [activeTab, setActiveTab] = useState("dashboard"); // dashboard, history, minutes, info
+            const [dateRange, setDateRange] = useState("this_month");
+            
+            // Dummy History state
+            const [historyLogs, setHistoryLogs] = useState([
+                { id: 1, date: "2026-03-26 14:30", user: "運用担当者", action: "広告設定: 予算調整", detail: "消化好調につき、リターゲティングの1日あたりの予算を増額。" },
+                { id: 2, date: "2026-03-24 10:15", user: "ディレクター", action: "クリエイティブ: 画像/動画の追加", detail: "春季キャンペーン用のスライダーバナーを3点入稿し、既存の古いバナーを停止。" },
+            ]);
+            const [logCategory, setLogCategory] = useState("広告設定");
+            const [logSubCategory, setLogSubCategory] = useState(HISTORY_MENU["広告設定"][0]);
+            const [newLog, setNewLog] = useState("");
+
+            useEffect(() => {
+                setLogSubCategory(HISTORY_MENU[logCategory][0]);
+            }, [logCategory]);
+
+            // Minutes State
+            const [minutesLogs, setMinutesLogs] = useState([
+                { id: 1, date: "2026-03-25", user: "運用担当: 佐藤", title: "4月度キャンペーン定例ミーティング", detail: "・4月15日からの春季キャンペーンについてすり合わせ\n・予算は現状維持だが、リターゲティンクの比率を現状の10%から20%へ増やす方向\n・新規クリエイティブは来週水曜までにクライアント側からURL（Drive）にて連携予定\n\n【Next Action】\n佐藤: 水曜に素材受領後、即日入稿\nクライアント様: 素材URLの手配" }
+            ]);
+            const [newMinuteTitle, setNewMinuteTitle] = useState("");
+            const [newMinuteText, setNewMinuteText] = useState("");
+
+            // Info State
+            const [clientInfo, setClientInfo] = useState({
+                assignee: client.assignee || "",
+                businessDetails: "都内で3店舗を展開する美容サロン。20代〜30代後半の女性がメインターゲット。強みは最新の痛くない脱毛器と完全個室のプライベート空間。",
+                websiteUrl: "https://example-beauty-salon.com",
+                assetUrl: "https://drive.google.com/drive/folders/xxxxxxxxx_example",
+                hotpepperUrl: "https://beauty.hotpepper.jp/slnX000000000/",
+                lineUrl: "https://lin.ee/xxxxxx"
+            });
+            const [isEditingInfo, setIsEditingInfo] = useState(false);
+
+            const handleAddLog = (e) => {
+                e.preventDefault();
+                const now = new Date();
+                const d = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                setHistoryLogs([{ id: Date.now(), date: d, user: "ログインユーザー", action: `${logCategory}: ${logSubCategory}`, detail: newLog || "(メモなし)" }, ...historyLogs]);
+                setNewLog("");
+            };
+
+            const handleAddMinute = (e) => {
+                e.preventDefault();
+                if(!newMinuteTitle || !newMinuteText) return;
+                const now = new Date();
+                const d = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                setMinutesLogs([{ id: Date.now(), date: d, user: "ログインユーザー", title: newMinuteTitle, detail: newMinuteText }, ...minutesLogs]);
+                setNewMinuteTitle("");
+                setNewMinuteText("");
+            };
+
+            const toggleExpand = (id) => {
+                const newSet = new Set(expandedRows);
+                newSet.has(id) ? newSet.delete(id) : newSet.add(id);
+                setExpandedRows(newSet);
+            };
+
+            const renderRows = (items) => {
+                let rows = [];
+                items.forEach(item => {
+                    const isExpanded = expandedRows.has(item.id);
+                    const hasChildren = item.children && item.children.length > 0;
+                    const indentClass = item.level === 0 ? "pl-4" : item.level === 1 ? "pl-10" : "pl-16";
+                    const rowBgClass = item.level === 0 ? "bg-white hover:bg-slate-50/80" : item.level === 1 ? "bg-slate-50/50 hover:bg-slate-100/50" : "bg-slate-50 hover:bg-slate-100";
+                    
+                    const cpa = item.cvs > 0 ? item.spend / item.cvs : 0;
+                    const cpm = item.impressions > 0 ? (item.spend / item.impressions) * 1000 : 0;
+                    const cpc = item.clicks > 0 ? item.spend / item.clicks : 0;
+                    const ctr = item.impressions > 0 ? (item.clicks / item.impressions) * 100 : 0;
+                    const freq = item.level === 0 ? 1.8 : item.level === 1 ? 1.5 : 1.2;
+                    
+                    rows.push(
+                        <tr key={item.id} className={`border-b border-border transition-colors cursor-pointer ${rowBgClass}`} onClick={() => hasChildren && toggleExpand(item.id)}>
+                            <td className={`p-3 align-middle font-medium ${indentClass}`}>
+                                <div className="flex items-center gap-2">
+                                    {hasChildren ? <span className={`text-slate-400 transition-transform ${isExpanded ? "rotate-90" : ""}`}><Icon name="ChevronRight" size={16} /></span> : <span className="w-4" />}
+                                    <span className={`flex items-center gap-2 font-medium text-slate-800`}>{item.name}</span>
+                                </div>
+                            </td>
+                            <td className="p-3 align-middle">{item.status === 'active' ? <Badge variant="active">配信中</Badge> : <Badge variant="paused">停止中</Badge>}</td>
+                            <td className="p-3 align-middle text-right font-bold">{formatNumber(item.cvs)}</td>
+                            <td className="p-3 align-middle text-right">{cpa > 0 ? formatCurrency(Math.floor(cpa)) : "-"}</td>
+                            <td className="p-3 align-middle text-right">{formatNumber(item.impressions)}</td>
+                            <td className="p-3 align-middle text-right">{formatCurrency(Math.floor(cpm))}</td>
+                            <td className="p-3 align-middle text-right">{formatNumber(item.clicks)}</td>
+                            <td className="p-3 align-middle text-right">{formatDecimal(freq)}</td>
+                            <td className="p-3 align-middle text-right">{formatCurrency(Math.floor(cpc))}</td>
+                            <td className="p-3 align-middle text-right">{formatPercent(ctr)}</td>
+                        </tr>
+                    );
+                    if (isExpanded && item.children) rows = rows.concat(renderRows(item.children));
+                });
+                return rows;
+            };
+
+            const isCpaHigh = client.cpa >= client.limitCpa && client.limitCpa > 0;
+
+            return (
+                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+                    <button onClick={onBack} className="text-sm font-medium text-slate-500 hover:text-slate-900 flex items-center transition-colors">
+                        <Icon name="ArrowLeft" size={16} className="mr-1" /> クライアント一覧に戻る
+                    </button>
+
+                    <header className="mb-2 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div>
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="w-10 h-10 rounded bg-primary text-primary-foreground flex items-center justify-center font-bold text-lg shadow-sm">
+                                    {client.name.charAt(0)}
+                                </div>
+                                <h2 className="text-2xl font-bold tracking-tight text-slate-900">{client.name}</h2>
+                            </div>
+                            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600 bg-white p-3 rounded-lg border border-slate-200 shadow-sm w-fit">
+                                <div className="flex items-center gap-1.5"><Icon name="Wallet" size={14} className="text-slate-400" /> <span className="text-slate-500">予算:</span> <span className="font-semibold text-slate-900">{client.budget > 0 ? formatCurrency(client.budget) : '未設定'}</span></div>
+                                <div className="flex items-center gap-1.5"><Icon name="Target" size={14} className="text-slate-400" /> <span className="text-slate-500">目標CPA:</span> <span className="font-semibold text-slate-900">{client.targetCpa > 0 ? formatCurrency(client.targetCpa) : '未設定'}</span></div>
+                                <div className="flex items-center gap-1.5"><Icon name="AlertTriangle" size={14} className="text-slate-400" /> <span className="text-slate-500">限界CPA:</span> <span className="font-semibold text-slate-900">{client.limitCpa > 0 ? formatCurrency(client.limitCpa) : '未設定'}</span></div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <Icon name="Calendar" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                <select 
+                                    value={dateRange}
+                                    onChange={(e) => setDateRange(e.target.value)}
+                                    className="appearance-none bg-white border border-slate-200 rounded-md shadow-sm pl-9 pr-8 py-2 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer hover:bg-slate-50 transition-colors"
+                                >
+                                    <option value="today">本日</option>
+                                    <option value="yesterday">昨日</option>
+                                    <option value="last_7">過去7日間</option>
+                                    <option value="last_30">過去30日間</option>
+                                    <option value="this_month">今月</option>
+                                    <option value="last_month">先月</option>
+                                    <option value="custom">カスタム指定</option>
+                                </select>
+                                <Icon name="ChevronDown" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            </div>
+                            {activeTab === 'dashboard' && (
+                                <button className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-colors flex items-center h-[38px]">
+                                    <Icon name="Download" size={16} className="mr-2 text-slate-400" /> CSV出力
+                                </button>
+                            )}
+                        </div>
+                    </header>
+
+                    {/* タブナビゲーション */}
+                    <div className="border-b border-slate-200">
+                        <nav className="-mb-px flex space-x-8 overflow-x-auto no-scrollbar" aria-label="Tabs">
+                            <button onClick={() => setActiveTab('dashboard')} className={`whitespace-nowrap flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'dashboard' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
+                                <Icon name="LayoutDashboard" size={16} className="mr-2" /> 配信ステータス
+                            </button>
+                            <button onClick={() => setActiveTab('history')} className={`whitespace-nowrap flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'history' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
+                                <Icon name="History" size={16} className="mr-2" /> 変更履歴・ログ
+                            </button>
+                            <button onClick={() => setActiveTab('minutes')} className={`whitespace-nowrap flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'minutes' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
+                                <Icon name="BookOpen" size={16} className="mr-2" /> 打ち合わせ議事録
+                            </button>
+                            <button onClick={() => setActiveTab('info')} className={`whitespace-nowrap flex-shrink-0 py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center ${activeTab === 'info' ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`}>
+                                <Icon name="Info" size={16} className="mr-2" /> アカウント情報 (URL/詳細)
+                            </button>
+                        </nav>
+                    </div>
+
+                    {/* タブコンテンツ: ダッシュボード */}
+                    {activeTab === 'dashboard' && (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                            <Card className="overflow-hidden shadow-sm border-slate-200">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm text-left whitespace-nowrap">
+                                        <thead className="text-xs text-slate-500 bg-slate-50/80 border-b">
+                                            <tr>
+                                                <th className="px-3 py-3 w-[220px]">名前</th>
+                                                <th className="px-3 py-3">ステータス</th>
+                                                <th className="px-3 py-3 text-right">結果</th>
+                                                <th className="px-3 py-3 text-right">結果の単価</th>
+                                                <th className="px-3 py-3 text-right">インプレッション</th>
+                                                <th className="px-3 py-3 text-right">CPM</th>
+                                                <th className="px-3 py-3 text-right">リンククリック</th>
+                                                <th className="px-3 py-3 text-right">フリークエンシー</th>
+                                                <th className="px-3 py-3 text-right">CPC</th>
+                                                <th className="px-3 py-3 text-right">CTR</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>{renderRows(data)}</tbody>
+                                    </table>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
+
+                    {/* タブコンテンツ: History */}
+                    {activeTab === 'history' && (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                            <Card className="p-6 border-slate-200 bg-white shadow-sm">
+                                <h3 className="text-sm font-bold text-slate-900 mb-5 flex items-center gap-2">
+                                    <Icon name="MessageSquarePlus" size={18} className="text-primary" /> 新しい変更履歴・ログを追加
+                                </h3>
+                                <form onSubmit={handleAddLog} className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-slate-700 block">大項目（何についての変更か）</label>
+                                            <div className="relative">
+                                                <select 
+                                                    value={logCategory} 
+                                                    onChange={e => setLogCategory(e.target.value)} 
+                                                    className="w-full px-3 py-2.5 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-slate-50 focus:bg-white transition-colors appearance-none pr-8"
+                                                >
+                                                    {Object.keys(HISTORY_MENU).map(cat => (
+                                                        <option key={cat} value={cat}>{cat}</option>
+                                                    ))}
+                                                </select>
+                                                <Icon name="ChevronDown" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-semibold text-slate-700 block">小項目（詳細な分類）</label>
+                                            <div className="relative">
+                                                <select 
+                                                    value={logSubCategory} 
+                                                    onChange={e => setLogSubCategory(e.target.value)} 
+                                                    className="w-full px-3 py-2.5 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-slate-50 focus:bg-white transition-colors appearance-none pr-8"
+                                                >
+                                                    {HISTORY_MENU[logCategory] && HISTORY_MENU[logCategory].map(sub => (
+                                                        <option key={sub} value={sub}>{sub}</option>
+                                                    ))}
+                                                </select>
+                                                <Icon name="ChevronDown" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-col md:flex-row gap-3 items-end pt-2">
+                                        <div className="flex-1 w-full space-y-2">
+                                            <label className="text-xs font-semibold text-slate-700 block">具体的な変更メモ (任意)</label>
+                                            <input 
+                                                type="text" 
+                                                value={newLog} 
+                                                onChange={e => setNewLog(e.target.value)} 
+                                                placeholder="例: CVR改善のため、リターゲティングの予算比率を20%アップしました。" 
+                                                className="w-full px-4 py-2.5 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-slate-50 focus:bg-white transition-colors" 
+                                            />
+                                        </div>
+                                        <button type="submit" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white px-8 py-2.5 rounded-md font-medium text-sm shadow-sm transition-colors whitespace-nowrap flex items-center justify-center gap-2 h-10">
+                                            <Icon name="Send" size={16} /> 履歴に残す
+                                        </button>
+                                    </div>
+                                </form>
+                            </Card>
+
+                            <div className="space-y-4">
+                                {historyLogs.map(log => {
+                                    const [mainCat, subCat] = log.action.split(": ");
+                                    return (
+                                        <Card key={log.id} className="p-5 flex gap-5 border-slate-200 hover:shadow-sm transition-shadow">
+                                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
+                                                <Icon name="ClipboardList" size={18} className="text-slate-500" />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                                                    <span className="font-semibold text-slate-900 text-sm whitespace-nowrap">{log.user}</span>
+                                                    <span className="text-xs text-slate-500 flex items-center gap-1 whitespace-nowrap">
+                                                        <Icon name="Clock" size={12} /> {log.date}
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                                    {mainCat && (
+                                                        <Badge variant="secondary" className="font-medium text-[11px] bg-slate-100 text-slate-700 border-none px-2 py-0.5 whitespace-nowrap">
+                                                            {mainCat}
+                                                        </Badge>
+                                                    )}
+                                                    {subCat && (
+                                                        <>
+                                                            <Icon name="ChevronRight" size={12} className="text-slate-400" />
+                                                            <Badge variant="secondary" className="font-medium text-[11px] bg-white text-slate-600 border-slate-200 px-2 py-0.5 whitespace-nowrap">
+                                                                {subCat}
+                                                            </Badge>
+                                                        </>
+                                                    )}
+                                                </div>
+                                                <p className="text-sm text-slate-800 mt-2 leading-relaxed bg-slate-50 rounded p-3 border border-slate-100">
+                                                    {log.detail}
+                                                </p>
+                                            </div>
+                                        </Card>
+                                    );
+                                })}
+                                {historyLogs.length === 0 && (
+                                    <div className="py-12 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50">
+                                        <Icon name="Inbox" size={32} className="text-slate-300 mb-3" />
+                                        <p className="text-slate-500 text-sm">変更履歴はまだありません。</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* タブコンテンツ: 議事録 (Minutes) */}
+                    {activeTab === 'minutes' && (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                            <Card className="p-6 border-slate-200 bg-white shadow-sm">
+                                <h3 className="text-sm font-bold text-slate-900 mb-5 flex items-center gap-2">
+                                    <Icon name="FileEdit" size={18} className="text-primary" /> 新しい議事録を追加
+                                </h3>
+                                <form onSubmit={handleAddMinute} className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold text-slate-700 block">タイトル（会議のテーマ）</label>
+                                        <input 
+                                            type="text" required value={newMinuteTitle} onChange={e => setNewMinuteTitle(e.target.value)} 
+                                            placeholder="例: 4月度定例ミーティング" 
+                                            className="w-full px-4 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white" 
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-semibold text-slate-700 block">議事録内容・決定事項</label>
+                                        <textarea 
+                                            required rows="4" value={newMinuteText} onChange={e => setNewMinuteText(e.target.value)} 
+                                            placeholder="決定事項やNext Actionを記入..." 
+                                            className="w-full px-4 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 bg-slate-50 focus:bg-white resize-y" 
+                                        />
+                                    </div>
+                                    <div className="text-right">
+                                        <button type="submit" className="bg-primary text-white px-8 py-2.5 rounded-md font-medium text-sm flex items-center justify-center gap-2 ml-auto w-full md:w-auto">
+                                            <Icon name="Save" size={16} /> 議事録を保存する
+                                        </button>
+                                    </div>
+                                </form>
+                            </Card>
+
+                            <div className="space-y-4">
+                                {minutesLogs.map(log => (
+                                    <Card key={log.id} className="p-6 border-slate-200 bg-white shadow-sm">
+                                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 border-b border-slate-100 pb-4">
+                                            <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                                <Icon name="BookOpen" size={18} className="text-slate-400" />
+                                                {log.title}
+                                            </h4>
+                                            <div className="flex items-center gap-3 text-xs text-slate-500">
+                                                <span className="flex items-center gap-1"><Icon name="User" size={12} /> {log.user}</span>
+                                                <span className="flex items-center gap-1"><Icon name="Calendar" size={12} /> {log.date}</span>
+                                            </div>
+                                        </div>
+                                        <div className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{log.detail}</div>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* タブコンテンツ: アカウント情報 (Info) */}
+                    {activeTab === 'info' && (
+                        <div className="space-y-6 animate-in fade-in duration-300">
+                            <Card className="p-6 md:p-8 border-slate-200 bg-white shadow-sm w-full">
+                                <div className="flex flex-wrap items-center justify-between border-b border-slate-100 pb-4 mb-6 gap-4">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                            <Icon name="Info" size={20} className="text-primary" /> クライアント情報・基本設定
+                                        </h3>
+                                        <p className="text-sm text-slate-500 mt-1">各種URLやビジネス情報を一元管理できます。</p>
+                                    </div>
+                                    {!isEditingInfo ? (
+                                        <button onClick={() => setIsEditingInfo(true)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2">
+                                            <Icon name="Edit2" size={16} /> 編集する
+                                        </button>
+                                    ) : (
+                                        <button onClick={() => {
+                                            setIsEditingInfo(false);
+                                            onUpdateClient({ ...client, assignee: clientInfo.assignee });
+                                        }} className="bg-primary text-white px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 shadow-sm">
+                                            <Icon name="Check" size={16} /> 保存して終了
+                                        </button>
+                                    )}
+                                </div>
+                                
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-2 md:gap-8 border-b border-slate-100 pb-6 w-full">
+                                        <div className="font-semibold text-slate-700 text-sm flex items-center gap-2">
+                                            <Icon name="User" size={16} className="text-blue-500" /> アカウント担当者
+                                        </div>
+                                        {isEditingInfo ? (
+                                            <input type="text" value={clientInfo.assignee} onChange={e => setClientInfo({...clientInfo, assignee: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm outline-none focus:border-primary" placeholder="例: 佐藤" />
+                                        ) : (
+                                            <div className="text-sm text-slate-800 leading-relaxed font-medium">{clientInfo.assignee || <span className="text-slate-400 font-normal">未設定</span>}</div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-2 md:gap-8 border-b border-slate-100 pb-6 w-full">
+                                        <div className="font-semibold text-slate-700 text-sm flex items-center gap-2">
+                                            <Icon name="FileText" size={16} className="text-slate-400" /> ビジネスの詳細・ターゲット
+                                        </div>
+                                        {isEditingInfo ? (
+                                            <textarea rows="3" value={clientInfo.businessDetails} onChange={e => setClientInfo({...clientInfo, businessDetails: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm outline-none focus:border-primary" />
+                                        ) : (
+                                            <div className="text-sm text-slate-800 leading-relaxed whitespace-pre-wrap">{clientInfo.businessDetails || <span className="text-slate-400">未設定</span>}</div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-2 md:gap-8 border-b border-slate-100 pb-6">
+                                        <div className="font-semibold text-slate-700 text-sm flex items-center gap-2">
+                                            <Icon name="FolderPlus" size={16} className="text-amber-500" /> 素材保管URL (Drive等)
+                                        </div>
+                                        {isEditingInfo ? (
+                                            <input type="text" value={clientInfo.assetUrl} onChange={e => setClientInfo({...clientInfo, assetUrl: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm outline-none focus:border-primary" />
+                                        ) : (
+                                            <div className="text-sm break-all w-full">
+                                                {clientInfo.assetUrl ? <a href={clientInfo.assetUrl} target="_blank" className="text-blue-600 hover:underline">{clientInfo.assetUrl}</a> : <span className="text-slate-400">未設定</span>}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-2 md:gap-8 border-b border-slate-100 pb-6">
+                                        <div className="font-semibold text-slate-700 text-sm flex items-center gap-2">
+                                            <Icon name="Globe" size={16} className="text-slate-400" /> Webサイト・LPのURL
+                                        </div>
+                                        {isEditingInfo ? (
+                                            <input type="text" value={clientInfo.websiteUrl} onChange={e => setClientInfo({...clientInfo, websiteUrl: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm outline-none focus:border-primary" />
+                                        ) : (
+                                            <div className="text-sm break-all w-full">
+                                                {clientInfo.websiteUrl ? <a href={clientInfo.websiteUrl} target="_blank" className="text-blue-600 hover:underline">{clientInfo.websiteUrl}</a> : <span className="text-slate-400">未設定</span>}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-2 md:gap-8 border-b border-slate-100 pb-6">
+                                        <div className="font-semibold text-slate-700 text-sm flex items-center gap-2">
+                                            <Icon name="Scissors" size={16} className="text-orange-500" /> ホットペッパービューティー
+                                        </div>
+                                        {isEditingInfo ? (
+                                            <input type="text" value={clientInfo.hotpepperUrl} onChange={e => setClientInfo({...clientInfo, hotpepperUrl: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm outline-none focus:border-primary" />
+                                        ) : (
+                                            <div className="text-sm break-all w-full">
+                                                {clientInfo.hotpepperUrl ? <a href={clientInfo.hotpepperUrl} target="_blank" className="text-blue-600 hover:underline">{clientInfo.hotpepperUrl}</a> : <span className="text-slate-400">未設定</span>}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-2 md:gap-8">
+                                        <div className="font-semibold text-slate-700 text-sm flex items-center gap-2">
+                                            <Icon name="MessageCircle" size={16} className="text-emerald-500" /> LINE公式アカウント等
+                                        </div>
+                                        {isEditingInfo ? (
+                                            <input type="text" value={clientInfo.lineUrl} onChange={e => setClientInfo({...clientInfo, lineUrl: e.target.value})} className="w-full px-3 py-2 border rounded-md text-sm outline-none focus:border-primary" />
+                                        ) : (
+                                            <div className="text-sm break-all w-full">
+                                                {clientInfo.lineUrl ? <a href={clientInfo.lineUrl} target="_blank" className="text-blue-600 hover:underline">{clientInfo.lineUrl}</a> : <span className="text-slate-400">未設定</span>}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </Card>
+                        </div>
+                    )}
+                </div>
+            )
+        };
+
+        const App = () => {
+            const [clients, setClients] = useState(initialClientsMock);
+            const [view, setView] = useState("clientList");
+            const [selectedClient, setSelectedClient] = useState(null);
+
+            const handleSelectClient = (client) => {
+                setSelectedClient(client);
+                setView("dashboard");
+            };
+            const handleBackToList = () => {
+                setView("clientList");
+                setSelectedClient(null);
+            };
+            const handleAddNew = () => setView("addClient");
+            const handleSaveNewClient = (newClient) => {
+                setClients(prev => [newClient, ...prev]);
+                setView("clientList");
+            };
+
+            return (
+                <div className="min-h-screen flex text-slate-900 bg-slate-50">
+                    <aside className="w-64 border-r border-slate-200 bg-white hidden md:flex flex-col flex-shrink-0 relative">
+                        <div className="p-6 h-16 flex items-center border-b border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors" onClick={handleBackToList}>
+                            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                                <span className="bg-primary text-primary-foreground p-1 rounded-md shadow-sm">
+                                    <Icon name="Activity" size={20} />
+                                </span>
+                                AdManager
+                            </h1>
+                        </div>
+                        <nav className="p-4 space-y-1 flex-1">
+                            <button onClick={handleBackToList} className={`w-full flex items-center gap-3 px-3 py-2 rounded-md font-medium transition-colors ${view === 'clientList' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                <Icon name="Users" size={18} className={view === 'clientList' ? "text-slate-700" : "text-slate-400"} />
+                                クライアント一覧
+                            </button>
+                            <button onClick={handleAddNew} className={`w-full flex items-center gap-3 px-3 py-2 rounded-md font-medium transition-colors ${view === 'addClient' ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                <Icon name="PlusCircle" size={18} className={view === 'addClient' ? "text-primary" : "text-slate-400"} />
+                                新規登録
+                            </button>
+                        </nav>
+                    </aside>
+                    <main className="flex-1 p-6 md:p-8 lg:p-10 max-w-7xl mx-auto w-full overflow-x-hidden">
+                        {view === "clientList" && <ClientList clients={clients} onSelectClient={handleSelectClient} onAddNew={handleAddNew} />}
+                        {view === "dashboard" && selectedClient && <DashboardDetail client={selectedClient} onBack={handleBackToList} onUpdateClient={(updated) => { setClients(prev => prev.map(c => c.id === updated.id ? updated : c)); setSelectedClient(updated); }} />}
+                        {view === "addClient" && <AddClientForm onSave={handleSaveNewClient} onCancel={handleBackToList} />}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ErrorBoundary><App /></ErrorBoundary>);
+    </script>
+</body>
+</html>

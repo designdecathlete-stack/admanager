@@ -1843,10 +1843,20 @@
                         const mapped = data.map(c => {
                             const rawMetrics = c.ad_metrics;
                             const metrics = Array.isArray(rawMetrics) ? rawMetrics : (rawMetrics ? [rawMetrics] : []);
-                            const totalSpend = metrics.reduce((sum, m) => sum + (parseFloat(m.spend) || 0), 0);
-                            const totalImpressions = metrics.reduce((sum, m) => sum + (parseInt(m.impressions) || 0), 0);
-                            const totalClicks = metrics.reduce((sum, m) => sum + (parseInt(m.clicks) || 0), 0);
-                            const totalCvs = metrics.reduce((sum, m) => sum + (parseFloat(m.conversions) || 0), 0);
+                            
+                            // 降順にソートして一番新しい（最新の）レコード1件だけを取り出す
+                            metrics.sort((a, b) => {
+                                const dateA = new Date(a.fetched_date || a.created_at || 0).getTime();
+                                const dateB = new Date(b.fetched_date || b.created_at || 0).getTime();
+                                return dateB - dateA;
+                            });
+
+                            const latestMetric = metrics.length > 0 ? metrics[0] : {};
+                            
+                            const totalSpend = parseFloat(latestMetric.spend) || 0;
+                            const totalImpressions = parseInt(latestMetric.impressions) || 0;
+                            const totalClicks = parseInt(latestMetric.clicks) || 0;
+                            const totalCvs = parseFloat(latestMetric.conversions) || 0;
 
                             return {
                                 id: c.id,

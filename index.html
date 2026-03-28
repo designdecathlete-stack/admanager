@@ -296,7 +296,42 @@
 
             const uniqueAssignees = Array.from(new Set(clients.map(c => c.assignee).filter(Boolean)));
 
-            const enriched = clients.map(c => ({ ...c, cpa: c.cvs > 0 ? c.spend / c.cvs : 0, ctr: c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0 }));
+            const now = new Date();
+            let startDate = new Date();
+            let endDate = new Date();
+            
+            if (dateRange === 'this_month') {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+            } else if (dateRange === 'last_month') {
+                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+            } else if (dateRange === 'last_7') {
+                startDate = new Date();
+                startDate.setDate(now.getDate() - 7);
+                startDate.setHours(0, 0, 0, 0);
+            }
+
+            const enriched = clients.map(c => {
+                const validMetrics = (c.rawMetrics || []).filter(m => {
+                    const d = new Date(m.fetched_date || m.created_at || Date.now());
+                    return d >= startDate && d <= endDate;
+                });
+                const spend = validMetrics.reduce((sum, m) => sum + (parseFloat(m.spend) || 0), 0);
+                const impressions = validMetrics.reduce((sum, m) => sum + (parseInt(m.impressions) || 0), 0);
+                const clicks = validMetrics.reduce((sum, m) => sum + (parseInt(m.clicks) || 0), 0);
+                const cvs = validMetrics.reduce((sum, m) => sum + (parseFloat(m.conversions) || 0), 0);
+                
+                return {
+                    ...c,
+                    spend,
+                    impressions,
+                    clicks,
+                    cvs,
+                    cpa: cvs > 0 ? spend / cvs : 0,
+                    ctr: impressions > 0 ? (clicks / impressions) * 100 : 0
+                };
+            });
 
             let processed = enriched.filter(c => {
                 const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || (c.adAccountId && c.adAccountId.includes(search));
@@ -347,6 +382,8 @@
                                         <th className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('spend')}><div className="flex items-center justify-end gap-1"><SortIcon column="spend" />消化 / 予算</div></th>
                                         <th className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('cpa')}><div className="flex items-center justify-end gap-1"><SortIcon column="cpa" />CPA</div></th>
                                         <th className="px-4 py-3 text-right">目標/限界CPA</th>
+                                        <th className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('impressions')}><div className="flex items-center justify-end gap-1"><SortIcon column="impressions" />インプレッション</div></th>
+                                        <th className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('clicks')}><div className="flex items-center justify-end gap-1"><SortIcon column="clicks" />クリック</div></th>
                                         <th className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('ctr')}><div className="flex items-center justify-end gap-1"><SortIcon column="ctr" />CTR</div></th>
                                         <th className="px-4 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('cvs')}><div className="flex items-center justify-end gap-1"><SortIcon column="cvs" />結果 (推移)</div></th>
                                         <th className="px-4 py-3 text-center">操作</th>
@@ -417,6 +454,12 @@
                                                             );
                                                         })}
                                                     </div>
+                                                </td>
+                                                <td className="px-4 py-4 text-right align-middle whitespace-nowrap">
+                                                    <div className="font-bold text-slate-900 text-sm tracking-tight">{formatNumber(client.impressions)}</div>
+                                                </td>
+                                                <td className="px-4 py-4 text-right align-middle whitespace-nowrap">
+                                                    <div className="font-bold text-slate-900 text-sm tracking-tight">{formatNumber(client.clicks)}</div>
                                                 </td>
                                                 <td className="px-4 py-4 text-right align-middle">
                                                     <div className="font-bold text-slate-700 text-sm mix-blend-multiply">{formatPercent(client.ctr)}</div>
@@ -1841,22 +1884,7 @@
                         console.log("Fetched clients data with ad_metrics:", data);
 
                         const mapped = data.map(c => {
-                            const rawMetrics = c.ad_metrics;
-                            const metrics = Array.isArray(rawMetrics) ? rawMetrics : (rawMetrics ? [rawMetrics] : []);
-                            
-                            // 降順にソートして一番新しい（最新の）レコード1件だけを取り出す
-                            metrics.sort((a, b) => {
-                                const dateA = new Date(a.fetched_date || a.created_at || 0).getTime();
-                                const dateB = new Date(b.fetched_date || b.created_at || 0).getTime();
-                                return dateB - dateA;
-                            });
-
-                            const latestMetric = metrics.length > 0 ? metrics[0] : {};
-                            
-                            const totalSpend = parseFloat(latestMetric.spend) || 0;
-                            const totalImpressions = parseInt(latestMetric.impressions) || 0;
-                            const totalClicks = parseInt(latestMetric.clicks) || 0;
-                            const totalCvs = parseFloat(latestMetric.conversions) || 0;
+                            const rawMetrics = Array.isArray(c.ad_metrics) ? c.ad_metrics : (c.ad_metrics ? [c.ad_metrics] : []);
 
                             return {
                                 id: c.id,
@@ -1916,14 +1944,15 @@
                                 urlOtherStorage: c.url_other_storage,
                                 urlCreativeFolder: c.url_creative_folder,
 
-                                // Map the summed ad_metrics data
-                                spend: totalSpend, 
+                                // Map the raw ad_metrics data for dynamic sum downstream
+                                rawMetrics: rawMetrics,
+                                spend: 0, 
                                 prevSpend: 0, 
-                                cvs: totalCvs, 
+                                cvs: 0, 
                                 prevCvs: 0, 
                                 cpa: 0, 
-                                clicks: totalClicks, 
-                                impressions: totalImpressions, 
+                                clicks: 0, 
+                                impressions: 0, 
                                 historyCvs: []
                             };
                         });

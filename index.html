@@ -1835,7 +1835,7 @@
                         return;
                     }
                     try {
-                        const { data, error } = await supabase.from('clients').select('*, ad_metrics(*)');
+                        const { data, error } = await supabase.from('clients').select('*, ad_metrics!ad_metrics_client_id_fkey(*)');
                         if (error) throw error;
 
                         console.log("Fetched clients data with ad_metrics:", data);

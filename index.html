@@ -175,7 +175,7 @@
 
 
 
-        const AddClientForm = ({ onSave, onCancel }) => {
+        const AddClientForm = ({ onSave, onCancel, teamMembers }) => {
             const [formData, setFormData] = useState({ name: "", adAccountId: "", assignee: "", plan: "スタンダード", contractDate: "" });
             const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
             const handleSubmit = (e) => {
@@ -196,7 +196,15 @@
                         <Card className="p-6 space-y-8 shadow-sm">
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="space-y-2"><label className="text-sm font-medium text-slate-700">クライアント名 <span className="text-red-500">*</span></label><input required name="name" value={formData.name} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm" placeholder="株式会社〇〇" /></div>
-                                <div className="space-y-2"><label className="text-sm font-medium text-slate-700">代表者名（担当者名）</label><input name="assignee" value={formData.assignee} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm" placeholder="担当者名を入力" /></div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700">代表者名（担当者名）</label>
+                                    <select name="assignee" value={formData.assignee} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm bg-white">
+                                        <option value="">未設定</option>
+                                        {teamMembers && teamMembers.map(member => (
+                                            <option key={member.name} value={member.name}>{member.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium text-slate-700">契約プラン <span className="text-red-500">*</span></label>
                                     <select required name="plan" value={formData.plan} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm bg-white cursor-pointer">
@@ -460,7 +468,7 @@
             "リンク先": ["遷移先URL変更", "UTMパラメータ追加・変更", "遷移先停止/差し替え", "その他"]
         };
 
-        const DashboardDetail = ({ client, onBack, onUpdateClient, onDeleteClient, onFetchMetaAds, isFetchingMeta }) => {
+        const DashboardDetail = ({ client, onBack, onUpdateClient, onDeleteClient, onFetchMetaAds, isFetchingMeta, teamMembers }) => {
             const [expandedRows, setExpandedRows] = useState(new Set([]));
             const [activeTab, setActiveTab] = useState("dashboard");
             const [activeInfoTab, setActiveInfoTab] = useState("basic");
@@ -646,9 +654,10 @@
 
             const saveEditingHeader = () => {
                 if (editingHeaderField) {
+                    const isNum = ['budget', 'targetCpa', 'limitCpa'].includes(editingHeaderField);
                     onUpdateClient({
                         ...client,
-                        [editingHeaderField]: editingHeaderField === 'name' ? headerTempVal : Number(headerTempVal)
+                        [editingHeaderField]: isNum ? Number(headerTempVal) : headerTempVal
                     });
                 }
                 setEditingHeaderField(null);
@@ -993,26 +1002,47 @@
                                 )}
                             </div>
                             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600 bg-white p-3 rounded-lg border border-slate-200 shadow-sm w-fit">
-                                {['budget', 'targetCpa', 'limitCpa'].map(field => {
-                                    const labels = { budget: '予算', targetCpa: '目標CPA', limitCpa: '限界CPA' };
-                                    const icons = { budget: 'Wallet', targetCpa: 'Target', limitCpa: 'AlertTriangle' };
+                                {['assignee', 'budget', 'targetCpa', 'limitCpa'].map(field => {
+                                    const labels = { assignee: '運用担当者', budget: '予算', targetCpa: '目標CPA', limitCpa: '限界CPA' };
+                                    const icons = { assignee: 'User', budget: 'Wallet', targetCpa: 'Target', limitCpa: 'AlertTriangle' };
+                                    const isNumeric = field !== 'assignee';
                                     return (
-                                        <div key={field} className="flex items-center gap-1.5 group cursor-pointer" onClick={() => startEditingHeader(field, client[field])}>
+                                        <div key={field} className="flex items-center gap-1.5 group cursor-pointer" onClick={() => startEditingHeader(field, client[field] || '')}>
                                             <Icon name={icons[field]} size={14} className="text-slate-400" />
                                             <span className="text-slate-500">{labels[field]}:</span>
                                             {editingHeaderField === field ? (
-                                                <input
-                                                    autoFocus
-                                                    type="number"
-                                                    value={headerTempVal}
-                                                    onChange={e => setHeaderTempVal(e.target.value)}
-                                                    onKeyDown={e => e.key === 'Enter' && saveEditingHeader()}
-                                                    onBlur={saveEditingHeader}
-                                                    className="w-24 px-1 py-0.5 text-xs font-semibold border border-primary outline-none focus:ring-2 focus:ring-primary/20 rounded"
-                                                />
+                                                field === 'assignee' ? (
+                                                    <select
+                                                        autoFocus
+                                                        value={headerTempVal}
+                                                        onChange={e => {
+                                                            const val = e.target.value;
+                                                            setHeaderTempVal(val);
+                                                            onUpdateClient({ ...client, [field]: val });
+                                                            setEditingHeaderField(null);
+                                                        }}
+                                                        onBlur={() => setEditingHeaderField(null)}
+                                                        className="w-32 px-1 py-0.5 text-xs font-semibold border border-primary outline-none focus:ring-2 focus:ring-primary/20 rounded bg-white"
+                                                    >
+                                                        <option value="">未設定</option>
+                                                        {teamMembers && teamMembers.map(member => (
+                                                            <option key={member.name} value={member.name}>{member.name}</option>
+                                                        ))}
+                                                    </select>
+                                                ) : (
+                                                    <input
+                                                        autoFocus
+                                                        type={isNumeric ? "number" : "text"}
+                                                        value={headerTempVal}
+                                                        onChange={e => setHeaderTempVal(e.target.value)}
+                                                        onKeyDown={e => e.key === 'Enter' && saveEditingHeader()}
+                                                        onBlur={saveEditingHeader}
+                                                        className={`${isNumeric ? 'w-24' : 'w-32'} px-1 py-0.5 text-xs font-semibold border border-primary outline-none focus:ring-2 focus:ring-primary/20 rounded`}
+                                                    />
+                                                )
                                             ) : (
                                                 <span className="font-semibold text-slate-900 flex items-center gap-1 hover:text-primary transition-colors">
-                                                    {client[field] > 0 ? formatCurrency(client[field]) : '未設定'}
+                                                    {isNumeric ? (client[field] > 0 ? formatCurrency(client[field]) : '未設定') : (client[field] || '未設定')}
                                                     <Icon name="Edit3" size={12} className="text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                                                 </span>
                                             )}
@@ -1822,22 +1852,41 @@
                                                         <div className="text-xs font-bold text-slate-600 bg-slate-50 p-2 rounded">META広告 KPI</div>
                                                         <div className="grid grid-cols-1 gap-4">
                                                             {[
-                                                                { id: 'metaTargetConversions', label: '目標集客数' },
-                                                                { id: 'metaTargetCpa', label: '目標CPA' },
-                                                                { id: 'metaLimitCpa', label: '限界CPA' },
-                                                            ].map(f => (
+                                                                { id: 'metaTargetConversions', label: '目標集客数', isClientDirect: false },
+                                                                { id: 'targetCpa', label: '目標CPA', isClientDirect: true },
+                                                                { id: 'limitCpa', label: '限界CPA', isClientDirect: true },
+                                                            ].map(f => {
+                                                                const value = f.isClientDirect ? client[f.id] : clientInfo[f.id];
+                                                                const isEditing = editingInfoField === f.id;
+                                                                
+                                                                return (
                                                                 <div key={f.id}>
                                                                     <div className="text-xs font-semibold text-slate-500 mb-1">{f.label}</div>
-                                                                    {editingInfoField === f.id ? (
-                                                                        <input autoFocus type="text" value={clientInfo[f.id]} onChange={e => setClientInfo({ ...clientInfo, [f.id]: e.target.value })} onBlur={handleInfoSave} onKeyDown={e => e.key === 'Enter' && handleInfoSave()} className="w-full px-2 py-1 border rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-medium" />
+                                                                    {isEditing ? (
+                                                                        <input autoFocus type={f.isClientDirect ? "number" : "text"} value={value || ''} 
+                                                                            onChange={e => {
+                                                                                if (f.isClientDirect) {
+                                                                                    onUpdateClient({ ...client, [f.id]: Number(e.target.value) });
+                                                                                } else {
+                                                                                    setClientInfo({ ...clientInfo, [f.id]: e.target.value });
+                                                                                }
+                                                                            }} 
+                                                                            onBlur={() => { if (!f.isClientDirect) handleInfoSave(); setEditingInfoField(null); }} 
+                                                                            onKeyDown={e => {
+                                                                                if (e.key === 'Enter') {
+                                                                                    if (!f.isClientDirect) handleInfoSave();
+                                                                                    setEditingInfoField(null);
+                                                                                }
+                                                                            }} 
+                                                                            className="w-full px-2 py-1 border rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 font-medium" />
                                                                     ) : (
                                                                         <div onClick={() => setEditingInfoField(f.id)} className="text-sm font-bold text-slate-800 cursor-pointer hover:bg-slate-50 hover:text-primary p-2 -m-2 rounded transition-colors group flex justify-between items-center border border-transparent hover:border-slate-200">
-                                                                            <span>{clientInfo[f.id] || <span className="text-slate-400 font-normal">未設定</span>}</span>
+                                                                            <span>{value ? (f.isClientDirect ? formatCurrency(value) : value) : <span className="text-slate-400 font-normal">未設定</span>}</span>
                                                                             <span className="text-xs font-normal text-slate-600 bg-white shadow-sm border border-slate-200 py-0.5 px-2 flex items-center gap-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shrink-0 ml-2"><Icon name="Edit3" size={12} /> 編集</span>
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                            ))}
+                                                            )})}
                                                         </div>
                                                     </div>
                                                     
@@ -1964,6 +2013,7 @@
             const [selectedClient, setSelectedClient] = useState(null);
             
             const [isFetchingMeta, setIsFetchingMeta] = useState(false);
+            const [teamMembers, setTeamMembers] = useState([]);
             const handleFetchMetaAds = async (targetClientId = null) => {
                 if (!supabase) {
                     alert('Supabaseが接続されていません');
@@ -2097,9 +2147,21 @@
                     }
                 }, []);
     
+                const fetchTeamMembers = useCallback(async () => {
+                    if (!supabase) return;
+                    try {
+                        const { data, error } = await supabase.from('team_members').select('name').order('name');
+                        if (error) throw error;
+                        setTeamMembers(data || []);
+                    } catch(err) {
+                        console.error("fetch team_members error", err);
+                    }
+                }, []);
+
                 useEffect(() => {
                     fetchClients();
-                }, [fetchClients]);
+                    fetchTeamMembers();
+                }, [fetchClients, fetchTeamMembers]);
 
                 useEffect(() => {
                     const handleHashChange = () => {
@@ -2318,8 +2380,8 @@
                     </aside>
                     <main className="flex-1 p-6 md:p-8 lg:p-10 max-w-7xl mx-auto w-full overflow-x-hidden">
                         {view === "clientList" && <ClientList clients={clients} onSelectClient={handleSelectClient} onAddNew={handleAddNew} onUpdateClient={handleUpdateClient} onReloadData={fetchClients} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} />}
-                        {view === "dashboard" && selectedClient && <DashboardDetail client={selectedClient} onBack={handleBackToList} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} />}
-                        {view === "addClient" && <AddClientForm onSave={handleSaveNewClient} onCancel={handleBackToList} />}
+                        {view === "dashboard" && selectedClient && <DashboardDetail client={selectedClient} onBack={handleBackToList} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} teamMembers={teamMembers} />}
+                        {view === "addClient" && <AddClientForm onSave={handleSaveNewClient} onCancel={handleBackToList} teamMembers={teamMembers} />}
                     </main>
                 </div>
             );

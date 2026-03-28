@@ -173,31 +173,7 @@
             );
         };
 
-        const generateClientData = (client) => {
-            const baseSpend = client.spend || client.budget * 0.5;
-            const baseCvs = client.cvs || client.targetCvs * 0.5;
-            return [
-                {
-                    id: `${client.id}-c1`, name: "リターゲティング_配信", level: 0, status: client.status === 'rejected' ? 'rejected' : "active",
-                    spend: baseSpend * 0.6, impressions: 800000, clicks: 8000, ctr: 1.0, cpa: (baseSpend * 0.6) / (baseCvs * 0.7) || 0, cvs: Math.floor(baseCvs * 0.7),
-                    children: [
-                        {
-                            id: `${client.id}-as1`, name: "全体訪問者_30日", level: 1, status: client.status === 'rejected' ? 'rejected' : "active",
-                            spend: baseSpend * 0.6, impressions: 800000, clicks: 8000, ctr: 1.0, cpa: (baseSpend * 0.6) / (baseCvs * 0.7) || 0, cvs: Math.floor(baseCvs * 0.7),
-                            children: [
-                                { id: `${client.id}-ad1`, name: "バナーA_割引訴求", level: 2, status: "active", spend: baseSpend * 0.4, impressions: 500000, clicks: 5000, ctr: 1.0, cpa: 0, cvs: Math.floor(baseCvs * 0.5) },
-                                { id: `${client.id}-ad2`, name: "バナーB_ブランディング", level: 2, status: client.status === 'rejected' ? 'rejected' : "active", spend: baseSpend * 0.2, impressions: 300000, clicks: 3000, ctr: 1.0, cpa: 0, cvs: Math.floor(baseCvs * 0.2) }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    id: `${client.id}-c2`, name: "ブロード配信_新規獲得", level: 0, status: client.status === 'rejected' ? "rejected" : "active",
-                    spend: baseSpend * 0.4, impressions: 1500000, clicks: 5000, ctr: 0.33, cpa: (baseSpend * 0.4) / (baseCvs * 0.3) || 0, cvs: Math.floor(baseCvs * 0.3),
-                    children: []
-                }
-            ];
-        };
+
 
         const AddClientForm = ({ onSave, onCancel }) => {
             const [formData, setFormData] = useState({ name: "", adAccountId: "", assignee: "", plan: "スタンダード", contractDate: "" });
@@ -506,11 +482,63 @@
         };
 
         const DashboardDetail = ({ client, onBack, onUpdateClient, onDeleteClient }) => {
-            const [data, setData] = useState(useMemo(() => generateClientData(client), [client]));
-            const [expandedRows, setExpandedRows] = useState(new Set([`${client.id}-c1`, `${client.id}-as1`]));
+            const [expandedRows, setExpandedRows] = useState(new Set([]));
             const [activeTab, setActiveTab] = useState("dashboard");
             const [activeInfoTab, setActiveInfoTab] = useState("basic");
             const [dateRange, setDateRange] = useState("this_month");
+
+            const data = useMemo(() => {
+                const now = new Date();
+                let startDate = new Date();
+                let endDate = new Date();
+                
+                if (dateRange === 'this_month') {
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+                } else if (dateRange === 'last_month') {
+                    startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+                } else if (dateRange === 'last_7') {
+                    startDate = new Date();
+                    startDate.setDate(now.getDate() - 7);
+                    startDate.setHours(0, 0, 0, 0);
+                } else if (dateRange === 'today') {
+                    startDate = new Date();
+                    startDate.setHours(0, 0, 0, 0);
+                    endDate = new Date();
+                    endDate.setHours(23, 59, 59, 999);
+                } else if (dateRange === 'yesterday') {
+                    startDate = new Date();
+                    startDate.setDate(now.getDate() - 1);
+                    startDate.setHours(0, 0, 0, 0);
+                    endDate = new Date(startDate);
+                    endDate.setHours(23, 59, 59, 999);
+                }
+
+                const validMetrics = (client.rawMetrics || []).filter(m => {
+                    const d = new Date(m.fetched_date || m.created_at || Date.now());
+                    return d >= startDate && d <= endDate;
+                });
+
+                const totalSpend = validMetrics.reduce((sum, m) => sum + (parseFloat(m.spend) || 0), 0);
+                const totalImpressions = validMetrics.reduce((sum, m) => sum + (parseInt(m.impressions) || 0), 0);
+                const totalClicks = validMetrics.reduce((sum, m) => sum + (parseInt(m.clicks) || 0), 0);
+                const totalCvs = validMetrics.reduce((sum, m) => sum + (parseFloat(m.conversions) || 0), 0);
+
+                return [
+                    {
+                        id: 'overall',
+                        name: 'アカウント全体実績',
+                        level: 0,
+                        status: client.status,
+                        spend: totalSpend,
+                        impressions: totalImpressions,
+                        clicks: totalClicks,
+                        cvs: totalCvs,
+                        children: []
+                    }
+                ];
+            }, [client.rawMetrics, client.status, dateRange]);
 
             // Supabase states
             const [dbHistoryLogs, setDbHistoryLogs] = useState([]);
@@ -845,10 +873,15 @@
                     const indentClass = item.level === 0 ? "pl-4" : item.level === 1 ? "pl-10" : "pl-16";
                     const rowBgClass = item.level === 0 ? "bg-white hover:bg-slate-50/80" : item.level === 1 ? "bg-slate-50/50 hover:bg-slate-100/50" : "bg-slate-50 hover:bg-slate-100";
 
-                    const cpa = item.cvs > 0 ? item.spend / item.cvs : 0;
-                    const cpm = item.impressions > 0 ? (item.spend / item.impressions) * 1000 : 0;
-                    const cpc = item.clicks > 0 ? item.spend / item.clicks : 0;
-                    const ctr = item.impressions > 0 ? (item.clicks / item.impressions) * 100 : 0;
+                    const cvs = parseFloat(item.cvs) || 0;
+                    const impressions = parseInt(item.impressions) || 0;
+                    const clicks = parseInt(item.clicks) || 0;
+                    const spend = parseFloat(item.spend) || 0;
+                    
+                    const cpa = cvs > 0 ? spend / cvs : 0;
+                    const cpm = impressions > 0 ? (spend / impressions) * 1000 : 0;
+                    const cpc = clicks > 0 ? spend / clicks : 0;
+                    const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
                     const freq = item.level === 0 ? 1.8 : item.level === 1 ? 1.5 : 1.2;
 
                     rows.push(

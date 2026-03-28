@@ -1971,10 +1971,14 @@
                 }
                 setIsFetchingMeta(true);
                 try {
-                    const options = targetClientId ? { body: { client_id: targetClientId } } : {};
+                    const clientId = typeof targetClientId === 'string' ? targetClientId : null;
+                    const options = clientId ? { body: { client_id: clientId } } : {};
                     const { data, error } = await supabase.functions.invoke('fetch-meta-ads', options);
                     if (error) throw error;
-                    alert(`METAデータの同期が完了しました\n${data?.message || ''}`);
+
+                    const detailsText = data?.details ? data.details.map(d => `・${d.name}: ${d.status} ${d.rows ? `(${d.rows}件)` : ''}`).join('\n') : '詳細データがありません';
+                    alert(`METAデータの同期が完了しました！\n\n【同期結果】\n${detailsText}`);
+
                     await fetchClients();
                 } catch (err) {
                     console.error("META fetch error:", err);

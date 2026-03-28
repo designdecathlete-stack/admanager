@@ -520,6 +520,80 @@
                     return d >= startDate && d <= endDate;
                 });
 
+                const hierarchy = {};
+
+                validMetrics.forEach(m => {
+                    const cName = m.campaign_name || "未分類キャンペーン";
+                    const sName = m.adset_name || "未分類広告セット";
+                    const aName = m.ad_name || "未分類広告";
+
+                    const spend = parseFloat(m.spend) || 0;
+                    const imp = parseInt(m.impressions) || 0;
+                    const clicks = parseInt(m.clicks) || 0;
+                    const cvs = parseFloat(m.conversions) || 0;
+
+                    if (!hierarchy[cName]) hierarchy[cName] = { spend: 0, imp: 0, clicks: 0, cvs: 0, adsets: {} };
+                    hierarchy[cName].spend += spend;
+                    hierarchy[cName].imp += imp;
+                    hierarchy[cName].clicks += clicks;
+                    hierarchy[cName].cvs += cvs;
+
+                    if (!hierarchy[cName].adsets[sName]) hierarchy[cName].adsets[sName] = { spend: 0, imp: 0, clicks: 0, cvs: 0, ads: {} };
+                    hierarchy[cName].adsets[sName].spend += spend;
+                    hierarchy[cName].adsets[sName].imp += imp;
+                    hierarchy[cName].adsets[sName].clicks += clicks;
+                    hierarchy[cName].adsets[sName].cvs += cvs;
+
+                    if (!hierarchy[cName].adsets[sName].ads[aName]) hierarchy[cName].adsets[sName].ads[aName] = { spend: 0, imp: 0, clicks: 0, cvs: 0 };
+                    hierarchy[cName].adsets[sName].ads[aName].spend += spend;
+                    hierarchy[cName].adsets[sName].ads[aName].imp += imp;
+                    hierarchy[cName].adsets[sName].ads[aName].clicks += clicks;
+                    hierarchy[cName].adsets[sName].ads[aName].cvs += cvs;
+                });
+
+                const campaignsNodes = Object.keys(hierarchy).map((cName, cIdx) => {
+                    const cData = hierarchy[cName];
+                    const adsetsNodes = Object.keys(cData.adsets).map((sName, sIdx) => {
+                        const sData = cData.adsets[sName];
+                        const adsNodes = Object.keys(sData.ads).map((aName, aIdx) => {
+                            const aData = sData.ads[aName];
+                            return {
+                                id: `ad-${cIdx}-${sIdx}-${aIdx}`,
+                                name: aName,
+                                level: 3,
+                                status: aData.spend > 0 ? 'active' : 'paused',
+                                spend: aData.spend,
+                                impressions: aData.imp,
+                                clicks: aData.clicks,
+                                cvs: aData.cvs,
+                                children: []
+                            };
+                        });
+                        return {
+                            id: `adset-${cIdx}-${sIdx}`,
+                            name: sName,
+                            level: 2,
+                            status: sData.spend > 0 ? 'active' : 'paused',
+                            spend: sData.spend,
+                            impressions: sData.imp,
+                            clicks: sData.clicks,
+                            cvs: sData.cvs,
+                            children: adsNodes
+                        };
+                    });
+                    return {
+                        id: `campaign-${cIdx}`,
+                        name: cName,
+                        level: 1,
+                        status: cData.spend > 0 ? 'active' : 'paused',
+                        spend: cData.spend,
+                        impressions: cData.imp,
+                        clicks: cData.clicks,
+                        cvs: cData.cvs,
+                        children: adsetsNodes
+                    };
+                });
+
                 const totalSpend = validMetrics.reduce((sum, m) => sum + (parseFloat(m.spend) || 0), 0);
                 const totalImpressions = validMetrics.reduce((sum, m) => sum + (parseInt(m.impressions) || 0), 0);
                 const totalClicks = validMetrics.reduce((sum, m) => sum + (parseInt(m.clicks) || 0), 0);
@@ -535,7 +609,7 @@
                         impressions: totalImpressions,
                         clicks: totalClicks,
                         cvs: totalCvs,
-                        children: []
+                        children: campaignsNodes
                     }
                 ];
             }, [client.rawMetrics, client.status, dateRange]);
@@ -870,8 +944,8 @@
                 items.forEach(item => {
                     const isExpanded = expandedRows.has(item.id);
                     const hasChildren = item.children && item.children.length > 0;
-                    const indentClass = item.level === 0 ? "pl-4" : item.level === 1 ? "pl-10" : "pl-16";
-                    const rowBgClass = item.level === 0 ? "bg-white hover:bg-slate-50/80" : item.level === 1 ? "bg-slate-50/50 hover:bg-slate-100/50" : "bg-slate-50 hover:bg-slate-100";
+                    const indentClass = item.level === 0 ? "pl-4" : item.level === 1 ? "pl-10" : item.level === 2 ? "pl-16" : "pl-20";
+                    const rowBgClass = item.level === 0 ? "bg-white hover:bg-slate-50/80" : item.level === 1 ? "bg-slate-50/50 hover:bg-slate-100/50" : item.level === 2 ? "bg-slate-50 hover:bg-slate-100/60" : "bg-white hover:bg-slate-50";
 
                     const cvs = parseFloat(item.cvs) || 0;
                     const impressions = parseInt(item.impressions) || 0;

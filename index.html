@@ -2136,63 +2136,69 @@
                 try {
                     // Extract info sub-object if it was updated via Account Info tab
                     const info = updatedClient.info || {};
-                    const updateData = {
-                        name: updatedClient.name,
-                        assignee: info.assignee !== undefined ? info.assignee : updatedClient.assignee,
-                        status: updatedClient.status,
-                        budget: updatedClient.budget,
-                        
-                        representative_name: info.representativeName !== undefined ? info.representativeName : updatedClient.representativeName,
-                        meta_plan: info.metaAdPlan !== undefined ? info.metaAdPlan : updatedClient.metaPlan,
-                        google_plan: info.googleAdPlan !== undefined ? info.googleAdPlan : updatedClient.googlePlan,
-                        lp_vendor: info.lpCreator !== undefined ? info.lpCreator : updatedClient.lpVendor,
-                        special_notes: info.contractNotes !== undefined ? info.contractNotes : updatedClient.specialNotes,
 
-                        business_details: info.businessDetails !== undefined ? info.businessDetails : updatedClient.businessDetails,
-                        service_details: info.serviceDetails !== undefined ? info.serviceDetails : updatedClient.serviceDetails,
-                        hearing_notes: info.initialHearing !== undefined ? info.initialHearing : updatedClient.hearingNotes,
-                        main_services: info.services !== undefined ? info.services : updatedClient.mainServices,
-
-                        url_lp1: info.lpUrl1 !== undefined ? info.lpUrl1 : updatedClient.urlLp1,
-                        url_lp2: info.lpUrl2 !== undefined ? info.lpUrl2 : updatedClient.urlLp2,
-                        url_lp3: info.lpUrl3 !== undefined ? info.lpUrl3 : updatedClient.urlLp3,
-                        url_web1: info.websiteUrl1 !== undefined ? info.websiteUrl1 : updatedClient.urlWeb1,
-                        url_web2: info.websiteUrl2 !== undefined ? info.websiteUrl2 : updatedClient.urlWeb2,
-                        url_web3: info.websiteUrl3 !== undefined ? info.websiteUrl3 : updatedClient.urlWeb3,
-
-                        url_hotpepper: info.hotpepperUrl !== undefined ? info.hotpepperUrl : updatedClient.urlHotpepper,
-                        url_instagram: info.instagramUrl !== undefined ? info.instagramUrl : updatedClient.urlInstagram,
-                        url_line: info.lineUrl !== undefined ? info.lineUrl : updatedClient.urlLine,
-                        url_tiktok: info.tiktokUrl !== undefined ? info.tiktokUrl : updatedClient.urlTiktok,
-                        url_x: info.xUrl !== undefined ? info.xUrl : updatedClient.urlX,
-                        url_youtube: info.youtubeUrl !== undefined ? info.youtubeUrl : updatedClient.urlYoutube,
-
-                        meta_ad_account_id: info.metaAdAccountId !== undefined ? info.metaAdAccountId : updatedClient.metaAdAccountId,
-                        pixel_id: info.pixelId !== undefined ? info.pixelId : updatedClient.pixelId,
-                        meta_fb_page: info.metaFacebookPage !== undefined ? info.metaFacebookPage : updatedClient.metaFbPage,
-                        meta_ig_account: info.metaInstagramAccount !== undefined ? info.metaInstagramAccount : updatedClient.metaIgAccount,
-
-                        google_customer_id: info.googleAdAccountId !== undefined ? info.googleAdAccountId : updatedClient.googleCustomerId,
-                        google_client_gmail: info.googleClientGmail !== undefined ? info.googleClientGmail : updatedClient.googleClientGmail,
-
-                        meta_target_cv: info.metaTargetConversions !== undefined ? info.metaTargetConversions : updatedClient.metaTargetCv,
-                        target_cpa: info.metaTargetCpa !== undefined ? info.metaTargetCpa : updatedClient.metaTargetCpa,
-                        limit_cpa: info.metaLimitCpa !== undefined ? info.metaLimitCpa : updatedClient.metaLimitCpa,
-
-                        google_target_cv: info.googleTargetConversions !== undefined ? info.googleTargetConversions : updatedClient.googleTargetCv,
-                        google_target_cpa: info.googleTargetCpa !== undefined ? info.googleTargetCpa : updatedClient.googleTargetCpa,
-                        google_limit_cpa: info.googleLimitCpa !== undefined ? info.googleLimitCpa : updatedClient.googleLimitCpa,
-
-                        url_google_photo: info.assetGooglePhoto !== undefined ? info.assetGooglePhoto : updatedClient.urlGooglePhoto,
-                        url_drive: info.assetGoogleDrive !== undefined ? info.assetGoogleDrive : updatedClient.urlDrive,
-                        url_dropbox: info.assetDropbox !== undefined ? info.assetDropbox : updatedClient.urlDropbox,
-                        url_other_storage: info.assetOther !== undefined ? info.assetOther : updatedClient.urlOtherStorage,
-                        url_creative_folder: info.creativeStorageUrl !== undefined ? info.creativeStorageUrl : updatedClient.urlCreativeFolder
+                    const getVal = (iVal, cVal) => {
+                        const v = iVal !== undefined ? iVal : cVal;
+                        return v === "" || v === undefined ? null : v;
+                    };
+                    const getNum = (iVal, cVal) => {
+                        const v = iVal !== undefined ? iVal : cVal;
+                        return v === "" || v === undefined ? null : parseFloat(v);
                     };
 
-                    Object.keys(updateData).forEach(key => {
-                        if (updateData[key] === "") updateData[key] = null;
-                    });
+                    const updateData = {
+                        name: updatedClient.name !== "" && updatedClient.name !== undefined ? updatedClient.name : null,
+                        assignee: getVal(info.assignee, updatedClient.assignee),
+                        status: updatedClient.status !== "" && updatedClient.status !== undefined ? updatedClient.status : null,
+                        budget: updatedClient.budget !== "" && updatedClient.budget !== undefined ? parseFloat(updatedClient.budget) : null,
+                        
+                        representative_name: getVal(info.representativeName, updatedClient.representativeName),
+                        meta_plan: getVal(info.metaAdPlan, updatedClient.metaPlan),
+                        google_plan: getVal(info.googleAdPlan, updatedClient.googlePlan),
+                        lp_vendor: getVal(info.lpCreator, updatedClient.lpVendor),
+                        special_notes: getVal(info.contractNotes, updatedClient.specialNotes),
+
+                        business_details: getVal(info.businessDetails, updatedClient.businessDetails),
+                        service_details: getVal(info.serviceDetails, updatedClient.serviceDetails),
+                        hearing_notes: getVal(info.initialHearing, updatedClient.hearingNotes),
+                        main_services: getVal(info.services, updatedClient.mainServices),
+
+                        url_lp1: getVal(info.lpUrl1, updatedClient.urlLp1),
+                        url_lp2: getVal(info.lpUrl2, updatedClient.urlLp2),
+                        url_lp3: getVal(info.lpUrl3, updatedClient.urlLp3),
+                        url_web1: getVal(info.websiteUrl1, updatedClient.urlWeb1),
+                        url_web2: getVal(info.websiteUrl2, updatedClient.urlWeb2),
+                        url_web3: getVal(info.websiteUrl3, updatedClient.urlWeb3),
+
+                        url_hotpepper: getVal(info.hotpepperUrl, updatedClient.urlHotpepper),
+                        url_instagram: getVal(info.instagramUrl, updatedClient.urlInstagram),
+                        url_line: getVal(info.lineUrl, updatedClient.urlLine),
+                        url_tiktok: getVal(info.tiktokUrl, updatedClient.urlTiktok),
+                        url_x: getVal(info.xUrl, updatedClient.urlX),
+                        url_youtube: getVal(info.youtubeUrl, updatedClient.urlYoutube),
+
+                        meta_ad_account_id: getVal(info.metaAdAccountId, updatedClient.metaAdAccountId),
+                        pixel_id: getVal(info.pixelId, updatedClient.pixelId),
+                        meta_fb_page: getVal(info.metaFacebookPage, updatedClient.metaFbPage),
+                        meta_ig_account: getVal(info.metaInstagramAccount, updatedClient.metaIgAccount),
+
+                        google_customer_id: getVal(info.googleAdAccountId, updatedClient.googleCustomerId),
+                        google_client_gmail: getVal(info.googleClientGmail, updatedClient.googleClientGmail),
+
+                        meta_target_cv: getNum(info.metaTargetConversions, updatedClient.metaTargetCv),
+                        target_cpa: getNum(info.metaTargetCpa, updatedClient.metaTargetCpa),
+                        limit_cpa: getNum(info.metaLimitCpa, updatedClient.metaLimitCpa),
+
+                        google_target_cv: getNum(info.googleTargetConversions, updatedClient.googleTargetCv),
+                        google_target_cpa: getNum(info.googleTargetCpa, updatedClient.googleTargetCpa),
+                        google_limit_cpa: getNum(info.googleLimitCpa, updatedClient.googleLimitCpa),
+
+                        url_google_photo: getVal(info.assetGooglePhoto, updatedClient.urlGooglePhoto),
+                        url_drive: getVal(info.assetGoogleDrive, updatedClient.urlDrive),
+                        url_dropbox: getVal(info.assetDropbox, updatedClient.urlDropbox),
+                        url_other_storage: getVal(info.assetOther, updatedClient.urlOtherStorage),
+                        url_creative_folder: getVal(info.creativeStorageUrl, updatedClient.urlCreativeFolder)
+                    };
 
                     const { error } = await supabase.from('clients').update(updateData).eq('id', updatedClient.id);
                     if (error) {

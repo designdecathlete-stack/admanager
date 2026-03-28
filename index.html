@@ -2007,7 +2007,7 @@
         };
 
 
-        const SettingsView = ({ teamMembers, onAddMember, onDeleteMember, onBack }) => {
+        const SettingsView = ({ teamMembers, onAddMember, handleDeleteTeamMember, onBack }) => {
             const [newMemberName, setNewMemberName] = useState("");
             
             const handleAdd = (e) => {
@@ -2015,12 +2015,6 @@
                 if (!newMemberName.trim()) return;
                 onAddMember(newMemberName.trim());
                 setNewMemberName("");
-            };
-
-            const handleDelete = (member) => {
-                if (window.confirm(`チームメンバー「${member.name}」を削除しますか？`)) {
-                    onDeleteMember(member.id);
-                }
             };
 
             return (
@@ -2048,7 +2042,7 @@
                             {teamMembers && teamMembers.length > 0 ? teamMembers.map(member => (
                                 <div key={member.id || member.name} className="flex items-center justify-between p-3 bg-white hover:bg-slate-50 transition-colors">
                                     <span className="font-medium text-slate-700">{member.name}</span>
-                                    <button onClick={() => handleDelete(member)} className="text-slate-400 hover:text-red-500 p-1.5 rounded-full hover:bg-red-50 transition-colors" title="削除">
+                                    <button onClick={() => handleDeleteTeamMember(member.id)} className="text-rose-500 hover:bg-rose-50 p-1.5 rounded transition-colors" title="削除">
                                         <Icon name="Trash2" size={16} />
                                     </button>
                                 </div>
@@ -2083,15 +2077,20 @@
             };
 
             const handleDeleteTeamMember = async (id) => {
-                if (!supabase) return;
-                try {
-                    const { error } = await supabase.from('team_members').delete().eq('id', id);
-                    if (error) throw error;
-                    fetchTeamMembers();
-                } catch (err) {
-                    console.error("delete member error", err);
-                    alert("メンバーの削除に失敗しました。");
+                if (!window.confirm("この担当者を削除しますか？（※すでに割り当てられているクライアントの担当者欄は空欄になります）")) return;
+                
+                if (supabase) {
+                    try {
+                        const { error } = await supabase.from('team_members').delete().eq('id', id);
+                        if (error) throw error;
+                    } catch (err) {
+                        console.error("Delete member error:", err);
+                        alert("削除に失敗しました。");
+                        return;
+                    }
                 }
+                // 成功したら画面のリストから消す
+                setTeamMembers(prev => prev.filter(m => m.id !== id));
             };
             const handleFetchMetaAds = async (targetClientId = null) => {
                 if (!supabase) {
@@ -2465,7 +2464,7 @@
                         {view === "clientList" && <ClientList clients={clients} onSelectClient={handleSelectClient} onAddNew={handleAddNew} onUpdateClient={handleUpdateClient} onReloadData={fetchClients} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} />}
                         {view === "dashboard" && selectedClient && <DashboardDetail client={selectedClient} onBack={handleBackToList} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} teamMembers={teamMembers} />}
                         {view === "addClient" && <AddClientForm onSave={handleSaveNewClient} onCancel={handleBackToList} teamMembers={teamMembers} />}
-                        {view === "settings" && <SettingsView teamMembers={teamMembers} onAddMember={handleAddTeamMember} onDeleteMember={handleDeleteTeamMember} onBack={handleBackToList} />}
+                        {view === "settings" && <SettingsView teamMembers={teamMembers} onAddMember={handleAddTeamMember} handleDeleteTeamMember={handleDeleteTeamMember} onBack={handleBackToList} />}
                     </main>
                 </div>
             );

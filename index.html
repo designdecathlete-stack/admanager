@@ -231,35 +231,14 @@
             );
         };
 
-        const ClientList = ({ clients, onSelectClient, onAddNew, onUpdateClient, onReloadData }) => {
+        const ClientList = ({ clients, onSelectClient, onAddNew, onUpdateClient, onReloadData, onFetchMetaAds, isFetchingMeta }) => {
             const [search, setSearch] = useState("");
             const [assigneeFilter, setAssigneeFilter] = useState("all");
             const [dateRange, setDateRange] = useState("this_month");
             const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
             const [editingInput, setEditingInput] = useState({ id: null, field: null, value: "" });
             const [menuOpen, setMenuOpen] = useState(null);
-            const [isFetchingMeta, setIsFetchingMeta] = useState(false);
 
-            const handleFetchMetaAds = async () => {
-                if (!supabase) {
-                    alert('Supabaseが接続されていません');
-                    return;
-                }
-                setIsFetchingMeta(true);
-                try {
-                    const { data, error } = await supabase.functions.invoke('fetch-meta-ads');
-                    if (error) throw error;
-                    alert('METAデータの同期が完了しました');
-                    if (onReloadData) {
-                        await onReloadData();
-                    }
-                } catch (err) {
-                    console.error(err);
-                    alert(`METAデータの同期に失敗しました: ${err.message || '不明なエラー'}`);
-                } finally {
-                    setIsFetchingMeta(false);
-                }
-            };
 
             const handleSort = (key) => setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
 
@@ -341,7 +320,7 @@
                                 <Icon name="Filter" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                             </div>
                             <input type="text" placeholder="キーワード検索" className="pl-3 pr-4 py-2 border border-slate-200 rounded-md text-sm min-w-[200px] shadow-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
-                            <button onClick={handleFetchMetaAds} disabled={isFetchingMeta} className={`px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 shadow-sm transition-colors ${isFetchingMeta ? 'bg-indigo-100 text-indigo-400 cursor-not-allowed' : 'bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300'}`}>
+                            <button onClick={() => onFetchMetaAds()} disabled={isFetchingMeta} className={`px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 shadow-sm transition-colors ${isFetchingMeta ? 'bg-indigo-100 text-indigo-400 cursor-not-allowed' : 'bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300'}`}>
                                 {isFetchingMeta ? <><Icon name="Loader" size={16} className="animate-spin" /> 同期中...</> : <><Icon name="RefreshCw" size={16} /> METAデータ同期</>}
                             </button>
                             <button onClick={onAddNew} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 shadow-sm transition-colors"><Icon name="Plus" size={16} /> 新規登録</button>
@@ -481,7 +460,7 @@
             "リンク先": ["遷移先URL変更", "UTMパラメータ追加・変更", "遷移先停止/差し替え", "その他"]
         };
 
-        const DashboardDetail = ({ client, onBack, onUpdateClient, onDeleteClient }) => {
+        const DashboardDetail = ({ client, onBack, onUpdateClient, onDeleteClient, onFetchMetaAds, isFetchingMeta }) => {
             const [expandedRows, setExpandedRows] = useState(new Set([]));
             const [activeTab, setActiveTab] = useState("dashboard");
             const [activeInfoTab, setActiveInfoTab] = useState("basic");
@@ -1061,9 +1040,15 @@
                                 <Icon name="ChevronDown" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                             </div>
                             {activeTab === 'dashboard' && (
-                                <button className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-colors flex items-center h-[38px]">
-                                    <Icon name="Download" size={16} className="mr-2 text-slate-400" /> CSV出力
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={() => onFetchMetaAds(client.id)} disabled={isFetchingMeta} className={`bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-colors flex items-center h-[38px] ${isFetchingMeta ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                        <Icon name={isFetchingMeta ? "Loader" : "RefreshCw"} size={16} className={`mr-2 ${isFetchingMeta ? 'animate-spin text-slate-400' : 'text-slate-400'}`} />
+                                        {isFetchingMeta ? "同期中..." : "このクライアントを同期"}
+                                    </button>
+                                    <button className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-colors flex items-center h-[38px]">
+                                        <Icon name="Download" size={16} className="mr-2 text-slate-400" /> CSV出力
+                                    </button>
+                                </div>
                             )}
                         </div>
                     </header>
@@ -1977,6 +1962,27 @@
             const [isLoading, setIsLoading] = useState(true);
             const [view, setView] = useState("clientList");
             const [selectedClient, setSelectedClient] = useState(null);
+            
+            const [isFetchingMeta, setIsFetchingMeta] = useState(false);
+            const handleFetchMetaAds = async (targetClientId = null) => {
+                if (!supabase) {
+                    alert('Supabaseが接続されていません');
+                    return;
+                }
+                setIsFetchingMeta(true);
+                try {
+                    const options = targetClientId ? { body: { client_id: targetClientId } } : {};
+                    const { data, error } = await supabase.functions.invoke('fetch-meta-ads', options);
+                    if (error) throw error;
+                    alert(`METAデータの同期が完了しました\n${data?.message || ''}`);
+                    await fetchClients();
+                } catch (err) {
+                    console.error("META fetch error:", err);
+                    alert(`METAデータの同期に失敗しました: ${err.message || '不明なエラー'}`);
+                } finally {
+                    setIsFetchingMeta(false);
+                }
+            };
 
             const fetchClients = useCallback(async () => {
                 if (!supabase) {
@@ -2307,8 +2313,8 @@
                         </nav>
                     </aside>
                     <main className="flex-1 p-6 md:p-8 lg:p-10 max-w-7xl mx-auto w-full overflow-x-hidden">
-                        {view === "clientList" && <ClientList clients={clients} onSelectClient={handleSelectClient} onAddNew={handleAddNew} onUpdateClient={handleUpdateClient} onReloadData={fetchClients} />}
-                        {view === "dashboard" && selectedClient && <DashboardDetail client={selectedClient} onBack={handleBackToList} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} />}
+                        {view === "clientList" && <ClientList clients={clients} onSelectClient={handleSelectClient} onAddNew={handleAddNew} onUpdateClient={handleUpdateClient} onReloadData={fetchClients} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} />}
+                        {view === "dashboard" && selectedClient && <DashboardDetail client={selectedClient} onBack={handleBackToList} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} />}
                         {view === "addClient" && <AddClientForm onSave={handleSaveNewClient} onCancel={handleBackToList} />}
                     </main>
                 </div>

@@ -2042,8 +2042,9 @@
                             {teamMembers && teamMembers.length > 0 ? teamMembers.map(member => (
                                 <div key={member.id || member.name} className="flex items-center justify-between p-3 bg-white hover:bg-slate-50 transition-colors">
                                     <span className="font-medium text-slate-700">{member.name}</span>
-                                    <button onClick={() => handleDeleteTeamMember(member.id)} className="text-rose-500 hover:bg-rose-50 p-1.5 rounded transition-colors" title="削除">
+                                    <button onClick={() => handleDeleteTeamMember(member.id)} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 border border-red-200 shadow-sm rounded-md transition-colors text-sm font-medium">
                                         <Icon name="Trash2" size={16} />
+                                        <span>削除</span>
                                     </button>
                                 </div>
                             )) : (

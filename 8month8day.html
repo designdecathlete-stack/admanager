@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>右腕を作り、現場を離れ、3店舗以上の店舗展開を実現するロードマップセミナー</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Shippori+Mincho:wght@400;500;600;700;800&family=Zen+Kaku+Gothic+New:wght@300;400;500;700;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'base': '#FFFFFF',
+                        'text': '#4A4A4A',
+                        'accent': '#C5A086',         // ベージュ・ブロンズ系
+                        'accent-gold': '#D4AF37',    // ゴールド
+                        'nuance': '#FDFBF9',         // オフホワイト・クリーム系
+                    },
+                    fontFamily: {
+                        'cormorant': ['Cormorant Garamond', 'serif'],
+                        'mincho': ['Shippori Mincho', 'serif'],
+                        'gothic': ['Zen Kaku Gothic New', 'sans-serif'],
+                    },
+                    backdropBlur: {
+                        'xs': '2px',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            font-family: 'Zen Kaku Gothic New', sans-serif;
+        }
+
+        h1, h2, h3, .font-mincho {
+            font-family: 'Shippori Mincho', serif;
+        }
+
+        .font-cormorant {
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        body {
+            background-color: #FFFFFF;
+            color: #4A4A4A;
+        }
+
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* Animated Orbs */
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.05;
+            animation: float-orb 20s ease-in-out infinite;
+        }
+
+        @keyframes float-orb {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(50px, -80px) scale(1.1); }
+            66% { transform: translate(-30px, 60px) scale(0.9); }
+        }
+
+        /* Fade In Up */
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Button Shine */
+        .btn-shine {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-shine::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .btn-shine:hover::before {
+            left: 100%;
+        }
+
+        /* CTA Buttons */
+        .cta-button {
+            background: linear-gradient(135deg, #C5A086 0%, #D4AF37 100%);
+            transition: all 0.3s ease;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(197, 160, 134, 0.3);
+        }
+
+        .cta-button-outline {
+            background: transparent;
+            border: 1px solid #FFFFFF;
+            color: #FFFFFF;
+            transition: all 0.3s ease;
+        }
+
+        .cta-button-outline:hover {
+            background: #FFFFFF;
+            color: #C5A086;
+        }
+
+        html { scroll-behavior: smooth; }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="fixed top-0 left-0 right-0 z-50 glass border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="text-xl font-mincho font-medium text-text tracking-wider">
+                Management Seminar
+            </div>
+            <nav class="hidden md:flex items-center gap-10">
+                <a href="#concept" class="text-sm text-text hover:text-accent transition-colors">
+                    <span class="font-cormorant text-base">Concept</span>
+                    <span class="text-xs ml-1">想い</span>
+                </a>
+                <a href="#speakers" class="text-sm text-text hover:text-accent transition-colors">
+                    <span class="font-cormorant text-base">Speakers</span>
+                    <span class="text-xs ml-1">講師</span>
+                </a>
+                <a href="#access" class="text-sm text-text hover:text-accent transition-colors">
+                    <span class="font-cormorant text-base">Access</span>
+                    <span class="text-xs ml-1">日程・会場</span>
+                </a>
+            </nav>
+            <a href="#reservation" class="cta-button text-white px-6 py-2 rounded-full text-sm font-medium">
+                Reserve
+            </a>
+        </div>
+    </header>
+
+    <!-- First View -->
+    <section class="min-h-screen flex items-center justify-center px-6 relative overflow-hidden pt-24">
+        <div class="orb w-96 h-96 top-20 left-10" style="background: radial-gradient(circle, #C5A086, #FDFBF9);"></div>
+        <div class="orb w-80 h-80 bottom-20 right-10" style="background: radial-gradient(circle, #D4AF37, #FDFBF9); animation-delay: -5s;"></div>
+
+        <div class="max-w-5xl mx-auto text-center relative z-10 fade-in-up">
+            <p class="font-cormorant italic text-3xl md:text-5xl text-accent mb-6 tracking-wide">
+                Next Stage of Management
+            </p>
+
+            <h1 class="text-3xl md:text-5xl font-mincho font-bold mb-8 leading-tight">
+                右腕を作り、現場を離れ<br>
+                3店舗以上の店舗展開を実現する<br>
+                ロードマップセミナー
+            </h1>
+
+            <p class="text-lg md:text-xl leading-relaxed mb-6 max-w-3xl mx-auto font-medium">
+                「誰に任せればいいか分からない」「結局自分がやった方が早い」はもう終わり。<br class="hidden md:block">
+                信頼できる右腕幹部を育て上げ、あなたが現場を離れても売上が伸び続ける組織へ。
+            </p>
+
+            <!-- Speakers Highlight -->
+            <div class="flex justify-center flex-wrap items-center gap-6 mb-12">
+                <div class="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-2 border-accent shadow-xl">
+                    <div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">清水 甲偉</div>
+                </div>
+                <div class="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-2 border-accent shadow-xl">
+                    <div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">佐々木 沙織</div>
+                </div>
+                <div class="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-2 border-accent shadow-xl">
+                    <div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">夏原 未裕佳</div>
+                </div>
+                <div class="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-2 border-accent shadow-xl">
+                    <div class="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-sm">工藤 誠</div>
+                </div>
+            </div>
+
+            <!-- Date Badge -->
+            <div class="text-center mb-8">
+                <span class="inline-block px-6 py-3 border border-gray-300 text-text rounded-full text-base font-medium bg-white shadow-sm">
+                    <i class="fas fa-calendar-alt mr-2 text-accent"></i>
+                    2026.08.08 (Sat) @ OSAKA <span class="mx-2 text-gray-300">|</span> 参加費 3,000円
+                </span>
+            </div>
+
+            <a href="#reservation" class="cta-button btn-shine inline-block text-white px-12 py-4 rounded-full font-medium text-lg">
+                セミナーの詳細を見る <i class="fas fa-arrow-down ml-2"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- Empathy Section -->
+    <section id="concept" class="py-32 px-6 bg-nuance relative overflow-hidden">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-20 fade-in-up">
+                <p class="font-cormorant italic text-3xl text-accent mb-6">The Pain You Face</p>
+                <h2 class="text-3xl md:text-4xl font-mincho font-bold mb-8">
+                    「私がいないと回らない」<br class="md:hidden">終わらない現場のジレンマ
+                </h2>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-0 mb-16 max-w-5xl mx-auto">
+                <div class="text-center px-6 py-12 fade-in-up border-b md:border-b-0 md:border-r border-gray-200">
+                    <div class="text-6xl font-cormorant italic text-accent mb-4">"</div>
+                    <p class="text-lg leading-relaxed">自分が現場を休んだ瞬間に、<br>売上が落ちそうで怖くて現場から離れられない</p>
+                </div>
+
+                <div class="text-center px-6 py-12 fade-in-up border-b md:border-b-0 md:border-r border-gray-200">
+                    <div class="text-6xl font-cormorant italic text-accent mb-4">"</div>
+                    <p class="text-lg leading-relaxed">右腕になってほしいと期待しても、<br>育つ前に辞めてしまい永遠に採用を繰り返している</p>
+                </div>
+
+                <div class="text-center px-6 py-12 fade-in-up">
+                    <div class="text-6xl font-cormorant italic text-accent mb-4">"</div>
+                    <p class="text-lg leading-relaxed">3店舗以上に展開したいが、<br>店長を任せられる人材がいなくて足踏みしている…</p>
+                </div>
+            </div>
+
+            <div class="max-w-3xl mx-auto text-center glass-card rounded-3xl p-12 fade-in-up">
+                <p class="text-xl leading-relaxed mb-4">
+                    これらは全て、あなたのマネジメント能力不足ではありません。<br>
+                    ただ単純に、「右腕幹部が自然と育つ仕組み」を知らないだけで、<span class="font-bold text-accent">あなた自身の圧倒的なスキルが逆に「強固な属人化」を生み出している</span>証拠なのです。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Method Section -->
+    <section class="py-32 px-6 relative overflow-hidden">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-20 fade-in-up">
+                <p class="font-cormorant italic text-3xl text-accent mb-6">The Roadmap</p>
+                <h2 class="text-3xl md:text-4xl font-mincho font-bold mb-8">
+                    現場を離れるための「右腕育成」絶対法則
+                </h2>
+                <p class="text-lg text-gray-600">あなたがいなくても、右腕が自走し店舗が増え続ける組織づくり</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-12">
+                <div class="relative fade-in-up">
+                    <div class="h-80 rounded-3xl overflow-hidden mb-6 bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
+                        Image Placeholder
+                    </div>
+                    <div class="glass-card rounded-3xl p-10 -mt-20 relative z-10 mx-6 shadow-lg">
+                        <div class="w-14 h-14 bg-accent/20 rounded-2xl flex items-center justify-center mb-6">
+                            <i class="fas fa-user-tie text-2xl text-accent"></i>
+                        </div>
+                        <h3 class="text-2xl font-mincho font-bold mb-3">トップダウンを卒業する「幹部育成マニュアル」</h3>
+                        <p class="text-gray-700 leading-relaxed">
+                            右腕が育たない一番の理由は「評価と権限譲渡の基準」が感覚になっているからです。店長・幹部候補が迷わず自発的に動ける明確な評価基準・役割設計を構築します。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="relative fade-in-up">
+                    <div class="h-80 rounded-3xl overflow-hidden mb-6 bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200">
+                        Image Placeholder
+                    </div>
+                    <div class="glass-card rounded-3xl p-10 -mt-20 relative z-10 mx-6 shadow-lg">
+                        <div class="w-14 h-14 bg-accent/20 rounded-2xl flex items-center justify-center mb-6">
+                            <i class="fas fa-route text-2xl text-accent"></i>
+                        </div>
+                        <h3 class="text-2xl font-mincho font-bold mb-3">現場離脱から「3店舗展開」へのロードマップ</h3>
+                        <p class="text-gray-700 leading-relaxed">
+                            優秀な幹部が育てば、オーナーは心置きなく現場を離れ、新規出店や経営戦略に専念できます。属人化を完全に排除し、確実に3店舗以上へスケールさせるためのステップを提示します。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Speakers Section -->
+    <section id="speakers" class="py-32 px-6 bg-nuance relative overflow-hidden">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-20 fade-in-up">
+                <p class="font-cormorant italic text-3xl text-accent mb-6">Speakers</p>
+                <h2 class="text-3xl md:text-4xl font-mincho font-bold">登壇講師紹介</h2>
+            </div>
+
+            <!-- Speaker 1 -->
+            <div class="grid md:grid-cols-2 gap-16 items-center mb-24 fade-in-up">
+                <div class="order-2 md:order-1">
+                    <h3 class="text-3xl font-mincho font-bold mb-2">清水 甲偉</h3>
+                    <p class="text-accent font-medium mb-6 text-lg">株式会社Be ambitious CMO</p>
+                    <p class="text-gray-700 leading-relaxed mb-6">
+                        「相互実現」を理念に掲げ、数多くの組織構築とマーケティング・FC展開のブレインを務める。女性オーナーたちが現場の気合いと感覚だけで疲弊する状況を変えるため、「仕組み」と「戦略」で店舗展開を成功へ導く具体的なロードマップを提供する。
+                    </p>
+                </div>
+                <div class="order-1 md:order-2 relative aspect-[3/4] bg-gray-200 rounded-3xl overflow-hidden flex items-center justify-center">
+                    <span class="text-gray-400">清水 甲偉 写真</span>
+                </div>
+            </div>
+
+            <!-- Speaker 2 -->
+            <div class="grid md:grid-cols-2 gap-16 items-center mb-24 fade-in-up">
+                <div class="relative aspect-[3/4] bg-gray-200 rounded-3xl overflow-hidden flex items-center justify-center">
+                    <span class="text-gray-400">佐々木 沙織 写真</span>
+                </div>
+                <div>
+                    <h3 class="text-3xl font-mincho font-bold mb-2">佐々木 沙織</h3>
+                    <p class="text-accent font-medium mb-6 text-lg">ハーブピーリング専門店「EMILUCA」 FCオーナー</p>
+                    <p class="text-gray-700 leading-relaxed mb-6">
+                        美容家の母のもとで育ち、15歳からスキンケアの道へ。過去に一度の廃業を経験した挫折から「再現性」と「属人化しない仕組みづくり」の重要性を痛感。二度目の独立でエミルカを設立し、現在は全国へのFC展開を進めている。自身の経験に裏打ちされた「失敗しないサロン経営の仕組み」を体現。
+                    </p>
+                </div>
+            </div>
+
+            <!-- Speaker 3 -->
+            <div class="grid md:grid-cols-2 gap-16 items-center mb-24 fade-in-up">
+                <div class="order-2 md:order-1">
+                    <h3 class="text-3xl font-mincho font-bold mb-2">夏原 未裕佳</h3>
+                    <p class="text-accent font-medium mb-6 text-lg">シミ専門サロン「Whila（ホワラ）」 オーナー</p>
+                    <p class="text-gray-700 leading-relaxed mb-6">
+                        過去に医療でのシミ取りで失敗した自身の強烈な原体験から、「ダウンタイムなしの次世代シミケア」をコンセプトとした専門サロンを立ち上げ全国へ多店舗展開。圧倒的な結果出しへのこだわりと、その高品質なサービスを全店舗でブレずに提供し続ける組織管理の手腕で多くの支持を集める。
+                    </p>
+                </div>
+                <div class="order-1 md:order-2 relative aspect-[3/4] bg-gray-200 rounded-3xl overflow-hidden flex items-center justify-center">
+                    <span class="text-gray-400">夏原 未裕佳 写真</span>
+                </div>
+            </div>
+
+            <!-- Speaker 4 -->
+            <div class="grid md:grid-cols-2 gap-16 items-center fade-in-up">
+                <div class="relative aspect-[3/4] bg-gray-200 rounded-3xl overflow-hidden flex items-center justify-center">
+                    <span class="text-gray-400">工藤 誠 写真</span>
+                </div>
+                <div>
+                    <h3 class="text-3xl font-mincho font-bold mb-2">工藤 誠</h3>
+                    <p class="text-accent font-medium mb-6 text-lg">整体サロン「Super Cells」代表取締役 / 理学療法士</p>
+                    <p class="text-gray-700 leading-relaxed mb-6">
+                        自身も理学療法士として現場に立ちながら、整体サロン「Super Cells」を全国規模で多店舗展開・支援。その確かなWEB集客メソッドと現場経験から、現在は整体院やエステ、ピラティスサロンなどの事業者へ向けたWEB集客および経営コンサルティングを実施し、多くのオーナーを「抜け出せない現場」から引き上げている。
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Access & Details -->
+    <section id="access" class="py-32 px-6 relative overflow-hidden">
+        <div class="max-w-5xl mx-auto">
+            <div class="text-center mb-20 fade-in-up">
+                <p class="font-cormorant italic text-3xl text-accent mb-6">Information</p>
+                <h2 class="text-3xl md:text-4xl font-mincho font-bold">開催概要</h2>
+                <p class="text-lg text-gray-600 mt-4">当日は皆様とお話しできるのを楽しみにしています</p>
+            </div>
+
+            <div class="glass-card border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.05)] rounded-3xl p-12 md:p-16 fade-in-up">
+                <div class="grid md:grid-cols-2 gap-12">
+                    <div class="flex items-start gap-6">
+                        <div class="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-calendar text-2xl text-accent"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg mb-2">Date</h4>
+                            <p class="text-gray-700 text-xl font-medium">2026年8月8日(土)</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-6">
+                        <div class="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-user-friends text-2xl text-accent"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg mb-2">Capacity</h4>
+                            <p class="text-gray-700"><span class="text-3xl font-bold text-accent">約50</span> 名限定</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-6">
+                        <div class="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-ticket-alt text-2xl text-accent"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg mb-2">Fee</h4>
+                            <p class="text-4xl font-bold text-accent mb-2">¥3,000</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start gap-6">
+                        <div class="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-map-marker-alt text-2xl text-accent"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-lg mb-2">Venue</h4>
+                            <p class="text-gray-700 font-medium">大阪某所</p>
+                            <p class="text-sm text-gray-500 mt-1">※詳細な会場はお申し込み後にお知らせいたします</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section id="reservation" class="py-32 px-6 relative overflow-hidden" style="background: linear-gradient(135deg, #C5A086 0%, #D4AF37 100%);">
+        <div class="max-w-4xl mx-auto text-center text-white fade-in-up">
+            <p class="font-cormorant italic text-4xl mb-8">Take Action</p>
+            <h2 class="text-3xl md:text-5xl font-mincho font-bold mb-12 leading-tight">
+                あなたが現場から離れる日が、<br>多店舗展開の真のスタートです。
+            </h2>
+            <p class="text-lg md:text-xl mb-12 opacity-90 leading-relaxed max-w-2xl mx-auto">
+                右腕となる強力な幹部を育て上げ、3店舗以上の確実なスケールを実現する。<br>
+                50名限定の特別な空間で、そのロードマップの全てをお伝えします。
+            </p>
+
+            <a href="#" class="cta-button-outline btn-shine inline-block px-12 py-5 rounded-full text-xl font-medium bg-white/10 backdrop-blur-sm border-white/50 hover:bg-white hover:text-accent">
+                セミナーに参加する（3,000円） <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- Mobile Sticky CTA -->
+    <div class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
+        <div class="px-4 py-3">
+            <a href="#reservation" class="cta-button btn-shine block text-center text-white px-8 py-4 rounded-full font-medium text-base w-full shadow-lg">
+                参加を申し込む <i class="fas fa-arrow-right ml-2"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- Script -->
+    <script>
+        const observerOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in-up').forEach((el, index) => {
+            el.style.transitionDelay = `${(index % 3) * 0.1}s`;
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

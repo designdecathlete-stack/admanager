@@ -2189,7 +2189,16 @@
                         url_other_storage: info.assetOther !== undefined ? info.assetOther : updatedClient.urlOtherStorage,
                         url_creative_folder: info.creativeStorageUrl !== undefined ? info.creativeStorageUrl : updatedClient.urlCreativeFolder
                     };
-                    await supabase.from('clients').update(updateData).eq('id', updatedClient.id);
+
+                    Object.keys(updateData).forEach(key => {
+                        if (updateData[key] === "") updateData[key] = null;
+                    });
+
+                    const { error } = await supabase.from('clients').update(updateData).eq('id', updatedClient.id);
+                    if (error) {
+                        alert("保存に失敗しました: " + error.message);
+                        throw error;
+                    }
                 } catch(e) {
                     console.error("Error updating client", e);
                 }

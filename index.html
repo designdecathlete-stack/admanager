@@ -704,7 +704,7 @@
                 // Contacts
                 representativeName: client.representativeName || "",
                 companyName: client.name || "",
-                assignee: client.assignee || "",
+                clientContactName: client.clientContactName || \"\",
                 // Contracts
                 metaAdPlan: client.metaPlan || "",
                 googleAdPlan: client.googlePlan || "",
@@ -1536,7 +1536,7 @@
                                             {[
                                                 { id: 'representativeName', label: '代表者名' },
                                                 { id: 'companyName', label: '法人名' },
-                                                { id: 'assignee', label: '担当者名' }
+                                                { id: 'clientContactName', label: '先方担当者名' }
                                             ].map(f => (
                                                 <div key={f.id}>
                                                     <div className="text-xs font-semibold text-slate-500 mb-1">{f.label}</div>
@@ -2151,6 +2151,7 @@
                                 id: c.id,
                                 name: c.name,
                                 assignee: c.assignee,
+                                clientContactName: c.client_contact_name,
                                 status: autoStatus,
                                 budget: c.budget || 0,
                                 targetCpa: c.target_cpa || 0,
@@ -2373,7 +2374,8 @@
 
                     const updateData = {
                         name: updatedClient.name !== "" && updatedClient.name !== undefined ? updatedClient.name : null,
-                        assignee: getVal(info.assignee, updatedClient.assignee),
+                        assignee: updatedClient.assignee !== undefined ? updatedClient.assignee : null,
+                        client_contact_name: getVal(info.clientContactName, updatedClient.clientContactName),
                         status: updatedClient.status !== "" && updatedClient.status !== undefined ? updatedClient.status : null,
                         budget: updatedClient.budget !== "" && updatedClient.budget !== undefined ? parseFloat(updatedClient.budget) : null,
                         

@@ -1839,70 +1839,88 @@
                         return;
                     }
                     try {
-                        const { data, error } = await supabase.from('clients').select('*');
+                        const { data, error } = await supabase.from('clients').select('*, ad_metrics(*)');
                         if (error) throw error;
 
-                        const mapped = data.map(c => ({
-                            id: c.id,
-                            name: c.name,
-                            assignee: c.assignee,
-                            status: c.status || 'active',
-                            budget: c.budget || 0,
-                            targetCpa: c.target_cpa || 0,
-                            limitCpa: c.limit_cpa || 0,
-                            plan: c.plan,
-                            contractDate: c.contract_date,
-                            
-                            representativeName: c.representative_name,
-                            metaPlan: c.meta_plan,
-                            googlePlan: c.google_plan,
-                            lpVendor: c.lp_vendor,
-                            specialNotes: c.special_notes,
+                        console.log("Fetched clients data with ad_metrics:", data);
 
-                            businessDetails: c.business_details,
-                            serviceDetails: c.service_details,
-                            hearingNotes: c.hearing_notes,
-                            mainServices: c.main_services,
+                        const mapped = data.map(c => {
+                            const rawMetrics = c.ad_metrics;
+                            const metrics = Array.isArray(rawMetrics) ? rawMetrics : (rawMetrics ? [rawMetrics] : []);
+                            const totalSpend = metrics.reduce((sum, m) => sum + (parseFloat(m.spend) || 0), 0);
+                            const totalImpressions = metrics.reduce((sum, m) => sum + (parseInt(m.impressions) || 0), 0);
+                            const totalClicks = metrics.reduce((sum, m) => sum + (parseInt(m.clicks) || 0), 0);
+                            const totalCvs = metrics.reduce((sum, m) => sum + (parseFloat(m.conversions) || 0), 0);
 
-                            urlLp1: c.url_lp1,
-                            urlLp2: c.url_lp2,
-                            urlLp3: c.url_lp3,
-                            urlWeb1: c.url_web1,
-                            urlWeb2: c.url_web2,
-                            urlWeb3: c.url_web3,
+                            return {
+                                id: c.id,
+                                name: c.name,
+                                assignee: c.assignee,
+                                status: c.status || 'active',
+                                budget: c.budget || 0,
+                                targetCpa: c.target_cpa || 0,
+                                limitCpa: c.limit_cpa || 0,
+                                plan: c.plan,
+                                contractDate: c.contract_date,
+                                
+                                representativeName: c.representative_name,
+                                metaPlan: c.meta_plan,
+                                googlePlan: c.google_plan,
+                                lpVendor: c.lp_vendor,
+                                specialNotes: c.special_notes,
 
-                            urlHotpepper: c.url_hotpepper,
-                            urlInstagram: c.url_instagram,
-                            urlLine: c.url_line,
-                            urlTiktok: c.url_tiktok,
-                            urlX: c.url_x,
-                            urlYoutube: c.url_youtube,
+                                businessDetails: c.business_details,
+                                serviceDetails: c.service_details,
+                                hearingNotes: c.hearing_notes,
+                                mainServices: c.main_services,
 
-                            metaAdAccountId: c.meta_ad_account_id,
-                            pixelId: c.pixel_id,
-                            metaFbPage: c.meta_fb_page,
-                            metaIgAccount: c.meta_ig_account,
+                                urlLp1: c.url_lp1,
+                                urlLp2: c.url_lp2,
+                                urlLp3: c.url_lp3,
+                                urlWeb1: c.url_web1,
+                                urlWeb2: c.url_web2,
+                                urlWeb3: c.url_web3,
 
-                            googleCustomerId: c.google_customer_id,
-                            googleClientGmail: c.google_client_gmail,
+                                urlHotpepper: c.url_hotpepper,
+                                urlInstagram: c.url_instagram,
+                                urlLine: c.url_line,
+                                urlTiktok: c.url_tiktok,
+                                urlX: c.url_x,
+                                urlYoutube: c.url_youtube,
 
-                            metaTargetCv: c.meta_target_cv,
-                            metaTargetCpa: c.target_cpa,
-                            metaLimitCpa: c.limit_cpa,
+                                metaAdAccountId: c.meta_ad_account_id,
+                                pixelId: c.pixel_id,
+                                metaFbPage: c.meta_fb_page,
+                                metaIgAccount: c.meta_ig_account,
 
-                            googleTargetCv: c.google_target_cv,
-                            googleTargetCpa: c.google_target_cpa,
-                            googleLimitCpa: c.google_limit_cpa,
+                                googleCustomerId: c.google_customer_id,
+                                googleClientGmail: c.google_client_gmail,
 
-                            urlGooglePhoto: c.url_google_photo,
-                            urlDrive: c.url_drive,
-                            urlDropbox: c.url_dropbox,
-                            urlOtherStorage: c.url_other_storage,
-                            urlCreativeFolder: c.url_creative_folder,
+                                metaTargetCv: c.meta_target_cv,
+                                metaTargetCpa: c.target_cpa,
+                                metaLimitCpa: c.limit_cpa,
 
-                            // defaults for list view if no metrics yet
-                            spend: 0, prevSpend: 0, cvs: 0, prevCvs: 0, cpa: 0, clicks: 0, impressions: 0, historyCvs: []
-                        }));
+                                googleTargetCv: c.google_target_cv,
+                                googleTargetCpa: c.google_target_cpa,
+                                googleLimitCpa: c.google_limit_cpa,
+
+                                urlGooglePhoto: c.url_google_photo,
+                                urlDrive: c.url_drive,
+                                urlDropbox: c.url_dropbox,
+                                urlOtherStorage: c.url_other_storage,
+                                urlCreativeFolder: c.url_creative_folder,
+
+                                // Map the summed ad_metrics data
+                                spend: totalSpend, 
+                                prevSpend: 0, 
+                                cvs: totalCvs, 
+                                prevCvs: 0, 
+                                cpa: 0, 
+                                clicks: totalClicks, 
+                                impressions: totalImpressions, 
+                                historyCvs: []
+                            };
+                        });
                         setClients(mapped.length > 0 ? mapped : initialClientsMock);
                     } catch (err) {
                         console.error('Error', err);

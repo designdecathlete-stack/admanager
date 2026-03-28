@@ -1919,11 +1919,26 @@
                         const mapped = data.map(c => {
                             const rawMetrics = Array.isArray(c.ad_metrics) ? c.ad_metrics : (c.ad_metrics ? [c.ad_metrics] : []);
 
+                            let autoStatus = c.status;
+                            if (autoStatus !== 'alert' && autoStatus !== 'rejected') {
+                                // 並び替えて最新の日付のレコード1件を取得する
+                                const sortedMetrics = [...rawMetrics].sort((a, b) => {
+                                    const dateA = new Date(a.fetched_date || a.created_at || 0).getTime();
+                                    const dateB = new Date(b.fetched_date || b.created_at || 0).getTime();
+                                    return dateB - dateA;
+                                });
+                                
+                                const latestMetric = sortedMetrics.length > 0 ? sortedMetrics[0] : null;
+                                const latestImpressions = latestMetric ? (parseInt(latestMetric.impressions) || 0) : 0;
+                                
+                                autoStatus = latestImpressions > 0 ? 'active' : 'paused';
+                            }
+
                             return {
                                 id: c.id,
                                 name: c.name,
                                 assignee: c.assignee,
-                                status: c.status || 'active',
+                                status: autoStatus,
                                 budget: c.budget || 0,
                                 targetCpa: c.target_cpa || 0,
                                 limitCpa: c.limit_cpa || 0,

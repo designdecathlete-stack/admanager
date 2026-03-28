@@ -157,11 +157,7 @@
         const formatDecimal = (val) => new Intl.NumberFormat("ja-JP", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(val);
         const formatPercent = (val) => new Intl.NumberFormat("ja-JP", { style: "percent", minimumFractionDigits: 1 }).format(val / 100);
 
-        const initialClientsMock = [
-            { id: "cl1", name: "株式会社アルファ", status: "active", adAccountId: "act_1001", budget: 2000000, targetCpa: 3000, limitCpa: 4500, targetCvs: 600, spend: 1250000, prevSpend: 1100000, cvs: 500, prevCvs: 450, cpa: 2500, assignee: "佐藤担当", clicks: 12500, prevClicks: 11000, impressions: 800000, alertReason: "", historyCvs: [30, 40, 45, 60, 50, 65, 70] },
-            { id: "cl2", name: "ベータクリニック", status: "alert", adAccountId: "act_2041", budget: 1500000, targetCpa: 8000, limitCpa: 10000, targetCvs: 180, spend: 850000, prevSpend: 880000, cvs: 85, prevCvs: 95, cpa: 10000, assignee: "鈴木担当", clicks: 8200, prevClicks: 8500, impressions: 1640000, alertReason: "限界CPA（¥10,000）を超過しています", historyCvs: [15, 12, 10, 8, 9, 6, 4] },
-            // ... (other mocks kept short for simplicity)
-        ];
+
 
         const Sparkline = ({ data, color = "#10b981" }) => {
             if (!data || data.length === 0) return null;
@@ -1834,7 +1830,7 @@
 
             const fetchClients = useCallback(async () => {
                 if (!supabase) {
-                        setClients(initialClientsMock);
+                        alert("データ取得エラー: Supabaseクライアントが初期化されていません。");
                         setIsLoading(false);
                         return;
                     }
@@ -1921,10 +1917,10 @@
                                 historyCvs: []
                             };
                         });
-                        setClients(mapped.length > 0 ? mapped : initialClientsMock);
+                        setClients(mapped);
                     } catch (err) {
                         console.error('Error', err);
-                        setClients(initialClientsMock);
+                        alert("データ取得エラー: " + err.message);
                     } finally {
                         setIsLoading(false);
                     }

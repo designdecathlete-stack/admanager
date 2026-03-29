@@ -474,6 +474,7 @@
             const [dateRange, setDateRange] = useState("this_month");
             const [customStartDate, setCustomStartDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
             const [customEndDate, setCustomEndDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
+            const [previewMedia, setPreviewMedia] = useState(null);
 
             const data = useMemo(() => {
                 const now = new Date();
@@ -544,6 +545,7 @@
                     hierarchy[cName].adsets[sName].ads[aName].cvs += cvs;
                     if (m.image_url) hierarchy[cName].adsets[sName].ads[aName].image_url = m.image_url;
                     if (m.link_url) hierarchy[cName].adsets[sName].ads[aName].link_url = m.link_url;
+                    if (m.video_url) hierarchy[cName].adsets[sName].ads[aName].video_url = m.video_url;
                 });
 
                 const campaignsNodes = Object.keys(hierarchy).map((cName, cIdx) => {
@@ -563,6 +565,7 @@
                                 cvs: aData.cvs,
                                 image_url: aData.image_url,
                                 link_url: aData.link_url,
+                                video_url: aData.video_url,
                                 children: []
                             };
                         });
@@ -968,7 +971,7 @@
                                         <span className="w-6 flex justify-center text-slate-300 shrink-0"><Icon name="Minus" size={16} /></span>
                                     )}
                                     {item.level === 3 && item.image_url ? (
-                                        <img src={item.image_url} className="w-8 h-8 rounded border border-slate-200 object-cover shrink-0" alt="ad preview" />
+                                        <img src={item.image_url} onClick={(e) => { e.stopPropagation(); setPreviewMedia({ type: item.video_url ? 'video' : 'image', url: item.video_url || item.image_url, linkUrl: item.link_url }); }} className="w-8 h-8 rounded border border-slate-200 object-cover shrink-0 cursor-pointer hover:opacity-80 transition-opacity" alt="ad preview" />
                                     ) : (
                                         <Icon name={item.level === 0 ? 'Layers' : item.level === 1 ? 'Folder' : item.level === 2 ? 'FolderOpen' : 'LayoutTemplate'} size={14} className="text-indigo-400 shrink-0" />
                                     )}
@@ -2035,6 +2038,27 @@
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    )}
+                    {previewMedia && (
+                        <div className="fixed inset-0 z-[100] bg-black/80 flex flex-col items-center justify-center p-4" onClick={() => setPreviewMedia(null)}>
+                            <div className="relative flex flex-col items-center" onClick={e => e.stopPropagation()}>
+                                <button onClick={() => setPreviewMedia(null)} className="absolute -top-10 right-0 text-white hover:text-slate-300 p-2">
+                                    <Icon name="X" size={24} />
+                                </button>
+                                {previewMedia.type === 'video' ? (
+                                    <video src={previewMedia.url} controls autoPlay className="max-w-[90vw] max-h-[70vh] rounded-md shadow-2xl object-contain bg-black" />
+                                ) : (
+                                    <img src={previewMedia.url} className="max-w-[90vw] max-h-[70vh] rounded-md shadow-2xl object-contain bg-black" alt="Preview" />
+                                )}
+                                {previewMedia.linkUrl && (
+                                    <div className="mt-4">
+                                        <a href={previewMedia.linkUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full flex items-center gap-2 transition-colors shadow-lg">
+                                            LPを開く <Icon name="ExternalLink" size={16} />
+                                        </a>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>

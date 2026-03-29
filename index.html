@@ -330,9 +330,7 @@
                                 <Icon name="Filter" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                             </div>
                             <input type="text" placeholder="キーワード検索" className="pl-3 pr-4 py-2 border border-slate-200 rounded-md text-sm min-w-[200px] shadow-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
-                            <button onClick={() => onFetchMetaAds()} disabled={isFetchingMeta} className={`px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 shadow-sm transition-colors ${isFetchingMeta ? 'bg-indigo-100 text-indigo-400 cursor-not-allowed' : 'bg-white border border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300'}`}>
-                                {isFetchingMeta ? <><Icon name="Loader" size={16} className="animate-spin" /> 同期中...</> : <><Icon name="RefreshCw" size={16} /> METAデータ同期</>}
-                            </button>
+
                             <button onClick={onAddNew} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 shadow-sm transition-colors"><Icon name="Plus" size={16} /> 新規登録</button>
                         </div>
                     </div>
@@ -2104,7 +2102,45 @@
         };
 
 
-        const SettingsView = ({ teamMembers, onAddMember, handleDeleteTeamMember, onBack }) => {
+        const LoginScreen = ({ onLogin }) => {
+            const [password, setPassword] = useState("");
+            const [error, setError] = useState("");
+            
+            const handleLogin = (e) => {
+                e.preventDefault();
+                if (password === "admin2026") {
+                    onLogin();
+                } else {
+                    setError("パスワードが一致しません");
+                }
+            };
+            
+            return (
+                <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+                    <Card className="w-full max-w-sm p-6 space-y-6 shadow-lg shadow-slate-200/50">
+                        <div className="text-center space-y-2">
+                            <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mx-auto text-white shadow-sm">
+                                <Icon name="Lock" size={24} />
+                            </div>
+                            <h2 className="text-xl font-bold tracking-tight text-slate-900">管理者ログイン</h2>
+                            <p className="text-sm text-slate-500">システムにアクセスするにはパスワードを入力してください</p>
+                        </div>
+                        
+                        <form onSubmit={handleLogin} className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700 block">パスワード</label>
+                                <input type="password" value={password} onChange={e => { setPassword(e.target.value); setError(""); }} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all font-mono" placeholder="••••••••" autoFocus />
+                                {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
+                            </div>
+                            <button type="submit" className="w-full bg-primary text-white hover:bg-primary/90 px-4 py-2.5 rounded-md font-medium text-sm transition-colors shadow-sm">ログイン</button>
+                        </form>
+                    </Card>
+                </div>
+            );
+        };
+
+
+        const SettingsView = ({ teamMembers, onAddMember, handleDeleteTeamMember, onBack, onFetchMetaAds, isFetchingMeta }) => {
             const [newMemberName, setNewMemberName] = useState("");
             
             const handleAdd = (e) => {
@@ -2148,12 +2184,20 @@
                                 <div className="p-4 text-center text-sm text-slate-500">メンバーが登録されていません</div>
                             )}
                         </div>
+
+                        <div className="mt-8 pt-8 border-t border-slate-200">
+                            <h3 className="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 mb-6">システム管理・連携</h3>
+                            <button onClick={onFetchMetaAds} disabled={isFetchingMeta} className={`w-full py-3 rounded-md font-bold text-sm flex items-center justify-center gap-2 shadow-sm transition-colors ${isFetchingMeta ? 'bg-indigo-100 text-indigo-400 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}>
+                                {isFetchingMeta ? <><Icon name="Loader" size={18} className="animate-spin" /> 同期中...</> : <><Icon name="RefreshCw" size={18} /> 全クライアントのMETAデータを一括同期する</>}
+                            </button>
+                        </div>
                     </Card>
                 </div>
             );
         };
 
         const App = () => {
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [clients, setClients] = useState([]);
             const [isLoading, setIsLoading] = useState(true);
             const [view, setView] = useState("clientList");
@@ -2534,6 +2578,8 @@
                 }
             };
 
+            if (!isAuthenticated) return <LoginScreen onLogin={() => setIsAuthenticated(true)} />;
+
             return (
                 <div className="min-h-screen flex text-slate-900 bg-slate-50">
                     <aside className="w-64 border-r border-slate-200 bg-white hidden md:flex flex-col flex-shrink-0 relative">
@@ -2564,7 +2610,7 @@
                         {view === "clientList" && <ClientList clients={clients} onSelectClient={handleSelectClient} onAddNew={handleAddNew} onUpdateClient={handleUpdateClient} onReloadData={fetchClients} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} />}
                         {view === "dashboard" && selectedClient && <DashboardDetail client={selectedClient} onBack={handleBackToList} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} teamMembers={teamMembers} />}
                         {view === "addClient" && <AddClientForm onSave={handleSaveNewClient} onCancel={handleBackToList} teamMembers={teamMembers} />}
-                        {view === "settings" && <SettingsView teamMembers={teamMembers} onAddMember={handleAddTeamMember} handleDeleteTeamMember={handleDeleteTeamMember} onBack={handleBackToList} />}
+                        {view === "settings" && <SettingsView teamMembers={teamMembers} onAddMember={handleAddTeamMember} handleDeleteTeamMember={handleDeleteTeamMember} onBack={handleBackToList} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} />}
                     </main>
                 </div>
             );

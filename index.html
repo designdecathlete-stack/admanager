@@ -538,7 +538,17 @@
                     hierarchy[cName].adsets[sName].clicks += clicks;
                     hierarchy[cName].adsets[sName].cvs += cvs;
 
-                    if (!hierarchy[cName].adsets[sName].ads[aName]) hierarchy[cName].adsets[sName].ads[aName] = { spend: 0, imp: 0, clicks: 0, cvs: 0 };
+                    if (!hierarchy[cName].adsets[sName].ads[aName]) {
+                        hierarchy[cName].adsets[sName].ads[aName] = { 
+                            spend: 0, 
+                            imp: 0, 
+                            clicks: 0, 
+                            cvs: 0,
+                            image_url: m.image_url || null,
+                            link_url: m.link_url || null,
+                            video_url: m.video_url || null
+                        };
+                    }
                     hierarchy[cName].adsets[sName].ads[aName].spend += spend;
                     hierarchy[cName].adsets[sName].ads[aName].imp += imp;
                     hierarchy[cName].adsets[sName].ads[aName].clicks += clicks;

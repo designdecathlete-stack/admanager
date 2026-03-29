@@ -554,6 +554,15 @@
                         const sData = cData.adsets[sName];
                         const adsNodes = Object.keys(sData.ads).map((aName, aIdx) => {
                             const aData = sData.ads[aName];
+
+                            const urlNode = {
+                                id: `url-${cIdx}-${sIdx}-${aIdx}`,
+                                name: aData.link_url ? aData.link_url : 'リンク先URLが取得できません',
+                                level: 4,
+                                isUrlNode: true,
+                                link_url: aData.link_url
+                            };
+
                             return {
                                 id: `ad-${cIdx}-${sIdx}-${aIdx}`,
                                 name: aName,
@@ -566,7 +575,7 @@
                                 image_url: aData.image_url,
                                 link_url: aData.link_url,
                                 video_url: aData.video_url,
-                                children: []
+                                children: [urlNode]
                             };
                         });
                         return {
@@ -943,6 +952,25 @@
             const renderRows = (items) => {
                 let rows = [];
                 items.forEach(item => {
+                    if (item.isUrlNode) {
+                        rows.push(
+                            <tr key={item.id} className="bg-slate-50/80 border-b border-slate-100">
+                                <td colSpan="11" className="p-3 pl-28 align-middle">
+                                    <div className="flex items-center gap-2 text-xs text-slate-600 font-mono bg-white border border-slate-200 px-3 py-2 rounded-md shadow-sm w-fit max-w-full overflow-hidden">
+                                        <Icon name="Link" size={14} className="text-blue-500 shrink-0" />
+                                        <span className="truncate select-all">{item.name}</span>
+                                        {item.link_url && (
+                                            <a href={item.link_url} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 hover:text-blue-800 shrink-0 hover:scale-110 transition-transform">
+                                                <Icon name="ExternalLink" size={14} />
+                                            </a>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                        return;
+                    }
+
                     const isExpanded = expandedRows.has(item.id);
                     const hasChildren = item.children && item.children.length > 0;
                     const indentClass = item.level === 0 ? "pl-4" : item.level === 1 ? "pl-10" : item.level === 2 ? "pl-16" : "pl-20";

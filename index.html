@@ -736,6 +736,7 @@
                 representativeName: client.representativeName || "",
                 companyName: client.name || "",
                 clientContactName: client.clientContactName || "",
+                viewPassword: client.viewPassword || "",
                 // Contracts
                 metaAdPlan: client.metaPlan || "",
                 googleAdPlan: client.googlePlan || "",
@@ -1623,7 +1624,8 @@
                                             {[
                                                 { id: 'representativeName', label: '代表者名' },
                                                 { id: 'companyName', label: '法人名' },
-                                                { id: 'clientContactName', label: '先方担当者名' }
+                                                { id: 'clientContactName', label: '先方担当者名' },
+                                                { id: 'viewPassword', label: '閲覧用パスワード（クライアント共有用）' }
                                             ].map(f => (
                                                 <div key={f.id}>
                                                     <div className="text-xs font-semibold text-slate-500 mb-1">{f.label}</div>
@@ -2327,6 +2329,7 @@
                                 limitCpa: c.limit_cpa || 0,
                                 plan: c.plan,
                                 contractDate: c.contract_date,
+                                viewPassword: c.view_password,
                                 
                                 representativeName: c.representative_name,
                                 metaPlan: c.meta_plan,
@@ -2546,6 +2549,7 @@
                         name: updatedClient.name !== "" && updatedClient.name !== undefined ? updatedClient.name : null,
                         assignee: updatedClient.assignee !== undefined ? updatedClient.assignee : null,
                         client_contact_name: getVal(info.clientContactName, updatedClient.clientContactName),
+                        view_password: getVal(info.viewPassword, updatedClient.viewPassword),
                         status: updatedClient.status !== "" && updatedClient.status !== undefined ? updatedClient.status : null,
                         budget: updatedClient.budget !== "" && updatedClient.budget !== undefined ? parseFloat(updatedClient.budget) : null,
                         

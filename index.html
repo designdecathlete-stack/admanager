@@ -466,7 +466,7 @@
             "リンク先": ["遷移先URL変更", "UTMパラメータ追加・変更", "遷移先停止/差し替え", "その他"]
         };
 
-        const DashboardDetail = ({ client, onBack, onUpdateClient, onDeleteClient, onFetchMetaAds, isFetchingMeta, teamMembers }) => {
+        const DashboardDetail = ({ role, client, onBack, onUpdateClient, onDeleteClient, onFetchMetaAds, isFetchingMeta, teamMembers }) => {
             const [expandedRows, setExpandedRows] = useState(new Set([]));
             const [activeTab, setActiveTab] = useState("dashboard");
             const [activeInfoTab, setActiveInfoTab] = useState("basic");

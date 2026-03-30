@@ -839,66 +839,7 @@
             const [newMinuteText, setNewMinuteText] = useState("");
 
             // Info State
-            const [clientInfo, setClientInfo] = useState({
-                // Contacts
-                representativeName: client.representativeName || "",
-                companyName: client.companyName || "",
-                groupName: client.groupName || "",
-                clientContactName: client.clientContactName || "",
-                viewPassword: client.viewPassword || "",
-                chatworkGroupId: client.chatworkGroupId || "",
-                internalLarkUrl: client.internalLarkUrl || "",
-                metaAdManagerUrl: client.metaAdManagerUrl || "",
-                googleAdManagerUrl: client.googleAdManagerUrl || "",
-                // Contracts
-                metaAdPlan: client.metaPlan || "",
-                googleAdPlan: client.googlePlan || "",
-                lpCreator: client.lpVendor || "",
-                contractNotes: client.specialNotes || "",
-                // Business and Service
-                businessDetails: client.businessDetails || "",
-                serviceDetails: client.serviceDetails || "",
-                initialHearing: client.hearingNotes || "",
-                services: client.mainServices || "",
-                
-                // Ads
-                metaAdAccountId: client.metaAdAccountId || "",
-                pixelId: client.pixelId || "",
-                metaFacebookPage: client.metaFbPage || "",
-                metaInstagramAccount: client.metaIgAccount || "",
-                googleAdAccountId: client.googleCustomerId || "",
-                googleClientGmail: client.googleClientGmail || "",
-                // KPIs
-                metaTargetConversions: client.metaTargetCv || "",
-                metaTargetCpa: client.metaTargetCpa || "",
-                metaLimitCpa: client.metaLimitCpa || "",
-                googleTargetConversions: client.googleTargetCv || "",
-                googleTargetCpa: client.googleTargetCpa || "",
-                googleLimitCpa: client.googleLimitCpa || "",
-                
-                // Creative
-                assetGooglePhoto: client.urlGooglePhoto || "",
-                assetGoogleDrive: client.urlDrive || "",
-                assetDropbox: client.urlDropbox || "",
-                assetOther: client.urlOtherStorage || "",
-                creativeStorageUrl: client.urlCreativeFolder || "",
-                
-                // Links - Web
-                lpUrl1: client.urlLp1 || "",
-                lpUrl2: client.urlLp2 || "",
-                lpUrl3: client.urlLp3 || "",
-                websiteUrl1: client.urlWeb1 || "",
-                websiteUrl2: client.urlWeb2 || "",
-                websiteUrl3: client.urlWeb3 || "",
-                // Links - Portal
-                hotpepperUrl: client.urlHotpepper || "",
-                // Links - SNS
-                instagramUrl: client.urlInstagram || "",
-                lineUrl: client.urlLine || "",
-                tiktokUrl: client.urlTiktok || "",
-                xUrl: client.urlX || "",
-                youtubeUrl: client.urlYoutube || ""
-            });
+            const [clientInfo, setClientInfo] = useState({});
 
             useEffect(() => {
                 setClientInfo({

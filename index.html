@@ -252,7 +252,6 @@
             const [dateRange, setDateRange] = useState("this_month");
             const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
             const [editingInput, setEditingInput] = useState({ id: null, field: null, value: "" });
-            const [menuOpen, setMenuOpen] = useState(null);
 
 
             const handleSort = (key) => setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
@@ -354,14 +353,13 @@
                                         <th className="px-2 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('clicks')}><div className="flex items-center justify-end gap-1"><SortIcon column="clicks" />クリック</div></th>
                                         <th className="px-2 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('ctr')}><div className="flex items-center justify-end gap-1"><SortIcon column="ctr" />CTR</div></th>
                                         <th className="px-3 py-3 text-right cursor-pointer hover:bg-slate-100 transition-colors" onClick={() => handleSort('cvs')}><div className="flex items-center justify-end gap-1"><SortIcon column="cvs" />結果 (推移)</div></th>
-                                        <th className="px-3 py-3 text-center">操作</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {processed.map(client => {
                                         const spendRatio = client.budget > 0 ? (client.spend / client.budget) * 100 : 0;
                                         return (
-                                            <tr key={client.id} onClick={() => onSelectClient(client)} className={`border-b border-slate-100 hover:bg-slate-50/80 transition-all cursor-pointer ${menuOpen === client.id ? "bg-slate-50 relative z-20" : "relative z-0"}`}>
+                                            <tr key={client.id} onClick={() => onSelectClient(client)} className="border-b border-slate-100 hover:bg-slate-50/80 transition-all cursor-pointer relative z-0">
                                                 <td className="px-3 py-4 font-medium align-middle">
                                                     <div className="flex items-center gap-3">
                                                         <div className="w-9 h-9 rounded-md bg-white text-primary flex items-center justify-center text-sm font-bold shadow-sm border border-slate-200">{client.name.charAt(0)}</div>
@@ -440,18 +438,6 @@
                                                         </div>
                                                         <div className="w-16 hidden lg:block opacity-80 hover:opacity-100 transition-opacity"><Sparkline data={client.historyCvs} color={client.cvs >= (client.prevCvs || 0) ? "#10b981" : "#ef4444"} /></div>
                                                     </div>
-                                                </td>
-                                                <td className="px-3 py-4 text-center align-middle relative">
-                                                    <div className="flex items-center justify-center">
-                                                        <button onClick={(e) => { e.stopPropagation(); setMenuOpen(menuOpen === client.id ? null : client.id) }} className={`p-1.5 rounded transition-colors relative z-10 ${menuOpen === client.id ? "bg-slate-200 text-slate-800 shadow-inner" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"}`}><Icon name="MoreHorizontal" size={16} /></button>
-                                                    </div>
-                                                    {menuOpen === client.id && (
-                                                        <div className="absolute right-6 top-12 w-48 bg-white border border-slate-200 rounded-md shadow-[0_4px_20px_-4px_rgba(0,0,0,0.1)] z-50 py-1.5 text-left animate-in fade-in zoom-in-95 duration-100">
-                                                            <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">アクション</div>
-                                                            <button onClick={(e) => e.stopPropagation()} className="w-full px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 flex items-center gap-2.5 transition-colors"><Icon name="FileBarChart" size={14} className="text-slate-400" /> レポート出力</button>
-                                                            <button onClick={(e) => e.stopPropagation()} className="w-full px-4 py-2 text-xs font-medium text-amber-600 hover:text-amber-700 hover:bg-amber-50 flex items-center gap-2.5 transition-colors"><Icon name="PauseCircle" size={14} className="text-amber-500" /> 配信一時停止</button>
-                                                        </div>
-                                                    )}
                                                 </td>
                                             </tr>
                                         )

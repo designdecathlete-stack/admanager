@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【A01】広告配信停止・インプレッション0の対応手順 - AdManager Manual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased leading-relaxed">
+
+    <header class="bg-slate-900 text-white py-4 shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-6 flex items-center justify-between">
+            <div class="font-bold tracking-wider flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
+                AdManager マニュアル
+            </div>
+            <a href="../index.html" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded transition-colors">
+                ダッシュボードへ戻る
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 py-10 space-y-12">
+        
+        <div>
+            <div class="inline-block bg-red-100 text-red-700 font-bold px-3 py-1 rounded-full text-xs mb-3 border border-red-200">
+                緊急度：高 (Sランク)
+            </div>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
+                【A01】広告配信停止・インプレッション0の対応手順
+            </h1>
+            <p class="text-slate-500">最終更新日：2026年3月30日</p>
+        </div>
+
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+                <span class="text-2xl">🚨</span> 1. このアラートが意味すること
+            </h2>
+            <p class="mb-4">
+                前々日まで配信されていた広告が、昨日「0回」しか表示されていません。<br>
+                これは単なる数値のブレではなく、<strong>広告アカウント自体が完全にストップしている「致命的なエラー（緊急度S）」</strong>です。
+            </p>
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 text-red-800 font-medium rounded-r">
+                店舗の新規集客が完全に止まっている状態です。発見次第、最優先で対応してください。
+            </div>
+        </section>
+
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+                <span class="text-2xl">🔍</span> 2. 原因特定のための初動チェックステップ
+            </h2>
+            <p class="mb-4">AdManagerでこのアラートを見つけたら、すぐに該当クライアントの「Meta広告マネージャ」または「Google広告管理画面」を開き、以下の順番で確認します。</p>
+            <ol class="list-decimal list-inside space-y-3 font-medium text-slate-700 ml-2">
+                <li class="pl-2">画面最上部に「アカウントエラー」の赤い警告帯が出ていないか？</li>
+                <li class="pl-2">「キャンペーン」「広告セット」「広告」のスイッチが意図せずオフになっていないか？</li>
+                <li class="pl-2">設定している「終了日」を過ぎていないか？</li>
+            </ol>
+        </section>
+
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-6 border-b border-slate-100 pb-3">
+                <span class="text-2xl">🛠️</span> 3. 原因別の対応フローと解決策
+            </h2>
+            
+            <div class="space-y-8">
+                <div>
+                    <h3 class="text-lg font-bold text-blue-700 bg-blue-50 px-4 py-2 rounded-t-md border border-blue-100 border-b-0">
+                        パターンA：クレジットカードの決済エラー <span class="text-sm font-normal text-blue-500 ml-2">発生頻度：高</span>
+                    </h3>
+                    <div class="border border-blue-100 p-4 rounded-b-md space-y-3">
+                        <p class="text-sm">店舗様のクレジットカードの限度額オーバーや、有効期限切れが原因で配信が止まっている状態です。</p>
+                        <div class="bg-slate-50 p-3 rounded text-sm">
+                            <span class="font-bold text-slate-700">対応：</span>代理店側（運用者側）では解決できないため、直ちにサロンオーナー様に連絡し、カード情報の更新をお願いしてください。
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded text-sm">
+                            <span class="font-bold text-slate-700">システムへの記録：</span>AdManagerの「変更履歴・ログ」タブに『決済エラー検知。店舗へカード更新を依頼』と記録を残します。
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold text-orange-700 bg-orange-50 px-4 py-2 rounded-t-md border border-orange-100 border-b-0">
+                        パターンB：広告の審査落ち・アカウント停止 <span class="text-sm font-normal text-orange-500 ml-2">発生頻度：中</span>
+                    </h3>
+                    <div class="border border-orange-100 p-4 rounded-b-md space-y-3">
+                        <p class="text-sm">Meta広告やGoogle広告のAIによって、クリエイティブが「ポリシー違反」と判定されたケースです。<br>
+                        ※美容サロン特有の<strong>「過度なビフォーアフター画像」</strong>や、<strong>「コンプレックスを過剰に煽るテキスト」</strong>などは、ある日突然AIの再審査に引っかかり停止することがよくあります。</p>
+                        <div class="bg-slate-50 p-3 rounded text-sm">
+                            <span class="font-bold text-slate-700">対応：</span>管理画面から「審査の再リクエスト（異議申し立て）」を行うか、引っかかった画像・テキストをマイルドな表現に差し替えて再入稿します。
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-lg font-bold text-slate-700 bg-slate-100 px-4 py-2 rounded-t-md border border-slate-200 border-b-0">
+                        パターンC：アカウント上限予算の到達 <span class="text-sm font-normal text-slate-500 ml-2">発生頻度：低</span>
+                    </h3>
+                    <div class="border border-slate-200 p-4 rounded-b-md space-y-3">
+                        <p class="text-sm">クライアントが独自に設定している「アカウント全体の上限予算」に達してしまい、自動停止しているケースです。</p>
+                        <div class="bg-slate-50 p-3 rounded text-sm">
+                            <span class="font-bold text-slate-700">対応：</span>店舗様と握っている今月の広告予算にまだ余裕がある場合は、管理画面の「支払い設定」からアカウント上限予算の金額を引き上げてください。
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">
+                <span class="text-2xl">📱</span> 4. サロンオーナー様への緊急連絡テンプレート
+            </h2>
+            <p class="mb-4 text-sm">決済エラーなど、店舗様側での操作が必要な場合は、以下のフォーマットをコピーしてLINEやチャットワーク等で送信してください。</p>
+            
+            <div class="relative group">
+                <pre class="bg-slate-800 text-slate-100 p-5 rounded-lg text-sm md:text-base font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">
+【重要】広告配信の一時停止に関するご連絡
+
+〇〇様、お世話になっております。
+日々の広告数値を監視しているシステムにて、〇〇広告（Meta/Google）の配信が停止しているアラートを検知いたしました。
+
+管理画面を確認したところ、ご登録いただいている【クレジットカードの決済エラー】が原因のようです。
+大変お手数ですが、集客を早急に再開するため、以下の手順でカード情報の更新、または別カードへのご変更をお願いできますでしょうか？
+
+（※ここに更新手順のURLやマニュアルを添付）
+
+カードの更新が完了いたしましたら、ご一報いただけますと幸いです。
+こちらで速やかに配信再開の手配を行います。よろしくお願いいたします。</pre>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center py-8 text-sm text-slate-400 mt-8 border-t border-slate-200">
+        &copy; 2026 Dec-Athlete Co., Ltd. AdManager System
+    </footer>
+
+</body>
+</html>

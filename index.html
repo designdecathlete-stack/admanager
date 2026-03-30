@@ -700,35 +700,55 @@
                 setIsAnalyzing(true);
                 setAnalysisResult("");
 
+                const overall = data[0] || { spend: 0, impressions: 0, clicks: 0, cvs: 0 };
+                const ctr = overall.impressions > 0 ? ((overall.clicks / overall.impressions) * 100).toFixed(2) : "0.00";
+                const cpc = overall.clicks > 0 ? Math.floor(overall.spend / overall.clicks) : 0;
+                const costPerResult = overall.cvs > 0 ? Math.floor(overall.spend / overall.cvs) : 0;
+
                 const systemPrompt = `あなたは美容サロンの集客を専門とする実力派WEB広告マーケターです。
 【重要ルール：必ず守ってください】
-1. 挨拶文や結びの定型文は一切不要です。いきなり本題から書き始めてください。
-2. 指定した【出力フォーマット】の構成と文言を完全に守り、不要な解説や理由は一切書かないでください。
-3. 専門用語は避け（例：CPA→獲得単価、CTR→クリック率）、一目で状況がわかるように短く断言してください。`;
+1. 指定された【出力フォーマット】の挨拶文と構成を完全に守って出力してください。
+2. 「CPA」という言葉は絶対に使用せず、「結果単価」と言い換えてください。
+3. 専門用語の解説や不要な理由は一切書かないでください。
+4. クリエイティブ評価は、名前のみを箇条書きで記載してください。`;
 
-                const userQuery = `以下の【広告データ】を分析し、【出力フォーマット】に沿って極めてコンパクトに出力してください。
+                const userQuery = `以下の【広告データ】を分析し、【出力フォーマット】に沿って出力してください。
 
 ---
-【広告データ】
-・クライアント名：${client.name}
-・限界CPA（赤字ライン）：${client.limitCpa > 0 ? client.limitCpa.toLocaleString() + '円' : '未設定'}
+【全体データ】
+・消化予算：${Math.floor(overall.spend).toLocaleString()}円
+・クリック数：${overall.clicks.toLocaleString()}回
+・CTR（クリック率）：${ctr}%
+・クリック単価：${cpc.toLocaleString()}円
+・結果数：${overall.cvs.toLocaleString()}件
+・結果単価：${costPerResult.toLocaleString()}円
 
 【クリエイティブ別詳細データ（JSON）】
 ${JSON.stringify(adsData, null, 2)}
 ---
 
 【出力フォーマット】
-■ 1. 今月の運用サマリー
-（消化額、獲得数、獲得単価、クリック率の数値を基に、目標や限界値に対する今月の結論を1〜2行で簡潔に記載）
+お世話になります。
+前月のMETA広告のレポートお送りいたします。
 
-■ 2. クリエイティブ評価
+消化予算：[全体データの消化予算]
+クリック数：[全体データのクリック数]
+CTR（クリック率）：[全体データのCTR]
+クリック単価：[全体データのクリック単価]
+結果数：[全体データの結果数]
+結果単価：[全体データの結果単価]
+
+【一言考察】
+（上記数値全体を見ての考察を2〜3行で簡潔に記載）
+
+■ クリエイティブ評価
 【好調（継続・強化）】
-・[好調なクリエイティブ名のみを箇条書きで列挙。理由や解説は一切不要。最大3つまで]
+・[好調なクリエイティブ名のみを箇条書きで列挙。理由不要。最大3つ]
 
 【不調（停止・改善）】
-・[不調なクリエイティブ名のみを箇条書きで列挙。理由や解説は一切不要。最大3つまで]
+・[不調なクリエイティブ名のみを箇条書きで列挙。理由不要。最大3つ]
 
-■ 3. 次月のクリエイティブ
+■ 次月のクリエイティブ
 次月試してみたい訴求がありますか？なければ勝ちクリエイティブをベースに横展開したクリエイティブをライターよりご提案させていただきます。`;
 
                 try {
@@ -1330,50 +1350,52 @@ ${JSON.stringify(adsData, null, 2)}
                     {/* タブコンテンツ: ダッシュボード */}
                     {activeTab === 'dashboard' && (
                         <div className="space-y-6 animate-in fade-in duration-300">
-                            <div className="space-y-4 mb-8">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-3">
-                                    <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
-                                        <Icon name="FileText" size={22} className="text-indigo-600" /> クリエイティブ分析レポート生成
-                                    </h3>
-                                    <div className="flex flex-wrap items-center gap-3">
-                                        <div className="relative">
-                                            <Icon name="Key" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                            <input 
-                                                type="password" 
-                                                placeholder="Gemini API Key" 
-                                                value={geminiApiKey} 
-                                                onChange={handleSaveApiKey} 
-                                                className="text-xs pl-8 pr-3 py-2 border border-slate-200 rounded-md focus:border-indigo-500 outline-none w-48 shadow-sm font-mono" 
-                                            />
+                            {role !== 'client' && (
+                                <div className="space-y-4 mb-8">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-3">
+                                        <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                                            <Icon name="FileText" size={22} className="text-indigo-600" /> クリエイティブ分析レポート生成
+                                        </h3>
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <div className="relative">
+                                                <Icon name="Key" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                                <input 
+                                                    type="password" 
+                                                    placeholder="Gemini API Key" 
+                                                    value={geminiApiKey} 
+                                                    onChange={handleSaveApiKey} 
+                                                    className="text-xs pl-8 pr-3 py-2 border border-slate-200 rounded-md focus:border-indigo-500 outline-none w-48 shadow-sm font-mono" 
+                                                />
+                                            </div>
+                                            <button 
+                                                onClick={handleAnalyze} 
+                                                disabled={isAnalyzing} 
+                                                className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
+                                            >
+                                                {isAnalyzing ? <Icon name="Loader" size={16} className="animate-spin" /> : <Icon name="Play" size={16} />}
+                                                {isAnalyzing ? "データを分析中..." : "レポートを生成する"}
+                                            </button>
                                         </div>
-                                        <button 
-                                            onClick={handleAnalyze} 
-                                            disabled={isAnalyzing} 
-                                            className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
-                                        >
-                                            {isAnalyzing ? <Icon name="Loader" size={16} className="animate-spin" /> : <Icon name="Play" size={16} />}
-                                            {isAnalyzing ? "データを分析中..." : "レポートを生成する"}
-                                        </button>
                                     </div>
+                                    
+                                    {analysisResult && (
+                                        <Card className="mt-6 p-8 bg-gradient-to-br from-indigo-50/50 via-white to-slate-50 border-indigo-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-indigo-100/80">
+                                                <div className="bg-indigo-100 p-2 rounded-lg">
+                                                    <Icon name="Sparkles" size={24} className="text-indigo-600" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-lg font-bold text-slate-800 tracking-tight">プロのマーケターによる分析レポート</h3>
+                                                    <p className="text-xs text-slate-500 mt-0.5">※対象期間のデータに基づく自動生成</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-sm text-slate-800 whitespace-pre-wrap leading-[1.9] font-medium tracking-wide prose prose-indigo max-w-none">
+                                                {analysisResult}
+                                            </div>
+                                        </Card>
+                                    )}
                                 </div>
-                                
-                                {analysisResult && (
-                                    <Card className="mt-6 p-8 bg-gradient-to-br from-indigo-50/50 via-white to-slate-50 border-indigo-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
-                                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-indigo-100/80">
-                                            <div className="bg-indigo-100 p-2 rounded-lg">
-                                                <Icon name="Sparkles" size={24} className="text-indigo-600" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-lg font-bold text-slate-800 tracking-tight">プロのマーケターによる分析レポート</h3>
-                                                <p className="text-xs text-slate-500 mt-0.5">※対象期間のデータに基づく自動生成</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-sm text-slate-800 whitespace-pre-wrap leading-[1.9] font-medium tracking-wide prose prose-indigo max-w-none">
-                                            {analysisResult}
-                                        </div>
-                                    </Card>
-                                )}
-                            </div>
+                            )}
 
                             <Card className="overflow-hidden shadow-sm border-slate-200">
                                 <div className="overflow-x-auto">

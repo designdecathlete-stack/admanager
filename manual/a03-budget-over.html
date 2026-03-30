@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【A03】予算の異常消化（ペース超過）の対応手順 - AdManager Manual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>body { font-family: 'Helvetica Neue', Arial, sans-serif; }</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased leading-relaxed">
+    <header class="bg-slate-900 text-white py-4 shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-6 flex items-center justify-between">
+            <div class="font-bold tracking-wider flex items-center gap-2">AdManager マニュアル</div>
+            <a href="../index.html" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded transition-colors">ダッシュボードへ戻る</a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 py-10 space-y-12">
+        <div>
+            <div class="inline-block bg-orange-100 text-orange-700 font-bold px-3 py-1 rounded-full text-xs mb-3 border border-orange-200">緊急度：高 (Aランク)</div>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">【A03】予算の異常消化（ペース超過）の対応手順</h1>
+        </div>
+
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">🚨 1. このアラートが意味すること</h2>
+            <p class="mb-4">月の途中にも関わらず、設定された月間予算に対して消化ペースが異常に早いです（例：月の半分で予算の80%を使ってしまった等）。<br>月末に広告が止まってしまったり、クライアントへの請求額が予算をオーバーしてしまう危険があります。</p>
+        </section>
+
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">🔍 2. 原因と対応フロー</h2>
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-lg font-bold text-red-700 bg-red-50 px-4 py-2 rounded-t-md border border-red-100 border-b-0">原因1：日予算（1日あたりの上限）の設定ミス</h3>
+                    <div class="border border-red-100 p-4 rounded-b-md space-y-2 text-sm">
+                        <p>1日「5,000円」のところを、誤って「50,000円」と桁を間違えて設定しているケースです。</p>
+                        <div class="bg-slate-50 p-3 rounded"><span class="font-bold">対応：</span>ただちに広告管理画面を開き、各キャンペーンの「1日の予算」を正しい金額に修正してください。</div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-blue-700 bg-blue-50 px-4 py-2 rounded-t-md border border-blue-100 border-b-0">原因2：設定予算の未更新（AdManager側）</h3>
+                    <div class="border border-blue-100 p-4 rounded-b-md space-y-2 text-sm">
+                        <p>クライアントから「今月はキャンペーンなので予算を倍にして」と言われて媒体側の設定は変えたものの、AdManagerの予算設定を変更し忘れているケースです。</p>
+                        <div class="bg-slate-50 p-3 rounded"><span class="font-bold">対応：</span>AdManagerのヘッダーにある「予算」をクリックし、正しい月間予算を入力して保存してください。</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 bg-amber-50 border-l-4 border-amber-500 p-4 text-amber-800 text-sm">
+                <strong>💡 予算コントロールの計算式：</strong><br>
+                (残り予算) ÷ (今月の残り日数) = (明日からの適切な日予算)<br>
+                予算超過が発覚した場合は、この計算式に当てはめて日予算を再設定し、軟着陸させます。
+            </div>
+        </section>
+    </main>
+</body>
+</html>

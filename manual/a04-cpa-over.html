@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【A04】限界CPA突破（赤字運用）の対応手順 - AdManager Manual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>body { font-family: 'Helvetica Neue', Arial, sans-serif; }</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased leading-relaxed">
+    <header class="bg-slate-900 text-white py-4 shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-6 flex items-center justify-between">
+            <div class="font-bold tracking-wider flex items-center gap-2">AdManager マニュアル</div>
+            <a href="../index.html" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded transition-colors">ダッシュボードへ戻る</a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 py-10 space-y-12">
+        <div>
+            <div class="inline-block bg-yellow-100 text-yellow-700 font-bold px-3 py-1 rounded-full text-xs mb-3 border border-yellow-200">緊急度：中 (Bランク)</div>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">【A04】限界CPA突破（赤字運用）の対応手順</h1>
+        </div>
+
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">🚨 1. このアラートが意味すること</h2>
+            <p class="mb-4">1件の予約（CV）を獲得するのにかかっている費用が、クライアントが許容できる「限界CPA」をオーバーしています。<br>このまま広告を回し続けると、<strong>サロン側が赤字（広告費倒れ）</strong>になってしまうため、チューニングが必要です。</p>
+        </section>
+
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">🛠️ 2. チューニング手順</h2>
+            <ol class="list-decimal list-inside space-y-4 font-medium text-slate-700 ml-2">
+                <li class="pl-2">
+                    <strong>足を引っ張っている広告（クリエイティブ）を停止する</strong>
+                    <p class="text-sm font-normal text-slate-500 mt-1 pl-6">AdManagerのダッシュボードタブを開き、階層を展開して「CPAが異常に高い画像/動画」を特定し、媒体側でOFFにします。</p>
+                </li>
+                <li class="pl-2">
+                    <strong>クリック率（CTR）を確認する</strong>
+                    <p class="text-sm font-normal text-slate-500 mt-1 pl-6">CTRが0.5%を下回っている場合は「クリエイティブの摩耗（飽き）」です。新しい画像・動画の制作を進行してください。</p>
+                </li>
+                <li class="pl-2">
+                    <strong>ターゲット層（オーディエンス）の変更</strong>
+                    <p class="text-sm font-normal text-slate-500 mt-1 pl-6">年齢層や興味関心の設定を広げるか、逆にCVが発生している層に絞り込みます。</p>
+                </li>
+            </ol>
+        </section>
+
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">📱 3. 連絡テンプレート（クリエイティブ差し替え依頼）</h2>
+            <pre class="bg-slate-800 text-slate-100 p-5 rounded-lg text-sm font-mono overflow-x-auto whitespace-pre-wrap">〇〇様、お世話になっております。
+現在配信中の広告ですが、同じ画像がターゲットに表示され続けており、クリック率が低下（＝獲得単価が高騰）している状態です。
+
+赤字運用を防ぐため、一時的に効果の悪い広告を停止し、予算ペースを落としております。
+つきましては、広告の「見せ方（画像・動画）」を新しくしたいため、新たなサロン内の様子や施術のビフォーアフター等の素材を数点ご共有いただくことは可能でしょうか？
+
+素材をいただき次第、こちらで新しい広告を作成・入稿し、獲得単価の改善を図ります。</pre>
+        </section>
+    </main>
+</body>
+</html>

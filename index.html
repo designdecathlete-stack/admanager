@@ -370,18 +370,16 @@
                                                     </div>
                                                 </td>
                                                 <td className="px-2 py-4 align-middle">
-                                                    <div className="group relative inline-block">
-                                                        {client.status === 'active' && <Badge variant="active">配信中</Badge>}
-                                                        {client.status === 'alert' && <Badge variant="alert" className="cursor-help">アラート</Badge>}
-                                                        {client.status === 'paused' && <Badge variant="paused">停止中</Badge>}
-                                                        {client.status === 'rejected' && <Badge variant="rejected">審査エラー</Badge>}
-                                                        {client.status === 'alert' && client.alertReason && (
-                                                            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-max max-w-[220px] bg-slate-800 text-white text-xs rounded-md shadow-lg py-2 px-3 z-[100] whitespace-normal">
-                                                                <div className="flex items-start gap-2">
-                                                                    <Icon name="AlertCircle" size={14} className="text-red-400 shrink-0 mt-0.5" />
-                                                                    <span>{client.alertReason}</span>
-                                                                </div>
-                                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                                                    <div className="flex flex-col items-start gap-1.5">
+                                                        <div className="flex items-center">
+                                                            {client.status === 'active' && <Badge variant="active">配信中</Badge>}
+                                                            {client.status === 'paused' && <Badge variant="paused">停止中</Badge>}
+                                                            {client.status === 'alert' && <Badge variant="alert">アラート</Badge>}
+                                                            {client.status === 'rejected' && <Badge variant="rejected">審査エラー</Badge>}
+                                                        </div>
+                                                        {client.alerts && client.alerts.length > 0 && (
+                                                            <div className="flex items-center gap-1 bg-red-100 text-red-700 px-2 py-0.5 rounded text-[10px] font-bold border border-red-200 shadow-sm whitespace-nowrap">
+                                                                <Icon name="AlertTriangle" size={10} /> {client.alerts.length}件のエラー
                                                             </div>
                                                         )}
                                                     </div>
@@ -2404,19 +2402,16 @@
 
                             let autoStatus = c.status;
                             if (autoStatus !== 'alert' && autoStatus !== 'rejected') {
-                                // 並び替えて最新の日付のレコード1件を取得する
                                 const sortedMetrics = [...rawMetrics].sort((a, b) => {
                                     const dateA = new Date(a.fetched_date || a.created_at || 0).getTime();
                                     const dateB = new Date(b.fetched_date || b.created_at || 0).getTime();
                                     return dateB - dateA;
                                 });
-                                
                                 const latestMetric = sortedMetrics.length > 0 ? sortedMetrics[0] : null;
                                 const latestImpressions = latestMetric ? (parseInt(latestMetric.impressions) || 0) : 0;
-                                
                                 autoStatus = latestImpressions > 0 ? 'active' : 'paused';
                             }
-                            
+
                             const today = new Date();
                             const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
                             const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
@@ -2426,108 +2421,54 @@
                             });
                             const spend = validMetrics.reduce((sum, m) => sum + (parseFloat(m.spend) || 0), 0);
                             const cvs = validMetrics.reduce((sum, m) => sum + (parseFloat(m.conversions) || 0), 0);
+                            const cpa = cvs > 0 ? spend / cvs : 0;
 
                             const alerts = [];
 
-                            // 条件1: 予算消化率の異常（20%以上の乖離）
-                            if (c.budget > 0) {
-                              const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-                              const expectedPace = today.getDate() / daysInMonth;
-                              const actualPace = spend / c.budget;
-                              if (Math.abs(actualPace - expectedPace) >= 0.2) {
-                                const statusV = actualPace > expectedPace ? "過剰" : "遅れ";
-                                alerts.push({ title: "予算消化の異常", desc: `今月の予算に対する消化ペースが想定より20%以上乖離しています（${statusV}）。予算設定や1日あたりの上限を確認してください。`, link: "#manual-budget" });
-                              }
-                            }
-
-                            // 条件2: 結果（コンバージョン）が0
-                            if (spend > 0 && cvs === 0) {
-                              alerts.push({ title: "コンバージョン未発生", desc: "費用が発生しているにも関わらず、結果（CV）が0件です。コンバージョンタグの設定漏れや、リンク先URLのリンク切れを疑ってください。", link: "#manual-cv" });
-                            }
-
-                            // 条件3: 前日のインプレッション急減
+                            // 1. 配信停止の疑い（前々日インプレッションあり、前日0）
                             const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
                             const dayBefore = new Date(today); dayBefore.setDate(today.getDate() - 2);
                             const yStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
                             const dbStr = `${dayBefore.getFullYear()}-${String(dayBefore.getMonth()+1).padStart(2,'0')}-${String(dayBefore.getDate()).padStart(2,'0')}`;
-
                             const yImps = rawMetrics.filter(m => (m.fetched_date || "").startsWith(yStr)).reduce((sum, m) => sum + (parseInt(m.impressions)||0), 0);
                             const dbImps = rawMetrics.filter(m => (m.fetched_date || "").startsWith(dbStr)).reduce((sum, m) => sum + (parseInt(m.impressions)||0), 0);
 
                             if (dbImps > 0 && yImps === 0) {
-                              alerts.push({ title: "広告の停止疑い", desc: "前々日まで配信されていましたが、前日のインプレッションが0になっています。広告アカウントの停止、審査落ち、または残高不足の可能性があります。", link: "#manual-stop" });
+                                alerts.push({ title: "配信停止の疑い", desc: "前々日まで配信されていましたが、前日の表示回数が0です。アカウント停止や残高不足の可能性があります。", link: "#" });
+                            }
+
+                            // 2. 計測・リンクエラー（5000円以上消化でCVゼロ）
+                            if (spend >= 5000 && cvs === 0) {
+                                alerts.push({ title: "コンバージョン未発生", desc: "5,000円以上の費用が発生していますが、結果（CV）が0件です。タグの設定漏れやLPのリンク切れを直ちに確認してください。", link: "#" });
+                            }
+
+                            // 3. 予算の異常消化（すでに予算の90%以上を消化）
+                            if (c.budget > 0) {
+                                const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+                                const expectedPace = today.getDate() / daysInMonth;
+                                const actualPace = spend / c.budget;
+                                if (actualPace >= 0.9 || (actualPace - expectedPace >= 0.3)) {
+                                    alerts.push({ title: "予算の異常消化", desc: "予算の消化ペースが異常に早い、またはすでに予算の上限に近づいています。日予算の設定ミスがないか確認してください。", link: "#" });
+                                }
+                            }
+
+                            // 4. 限界CPAの突破（赤字ライン）
+                            if (c.limit_cpa > 0 && cpa > c.limit_cpa) {
+                                alerts.push({ title: "限界CPAの超過", desc: `現在のCPA（${Math.floor(cpa).toLocaleString()}円）が、設定された限界CPA（${c.limit_cpa.toLocaleString()}円）を突破しています。配信の停止や入札の調整が必要です。`, link: "#" });
                             }
 
                             return {
-                                id: c.id,
-                                name: c.name,
-                                assignee: c.assignee,
-                                clientContactName: c.client_contact_name,
-                                status: autoStatus,
-                                budget: c.budget || 0,
-                                targetCpa: c.target_cpa || 0,
-                                limitCpa: c.limit_cpa || 0,
-                                plan: c.plan,
-                                contractDate: c.contract_date,
-                                viewPassword: c.view_password,
-                                
-                                representativeName: c.representative_name,
-                                metaPlan: c.meta_plan,
-                                googlePlan: c.google_plan,
-                                lpVendor: c.lp_vendor,
-                                specialNotes: c.special_notes,
-
-                                businessDetails: c.business_details,
-                                serviceDetails: c.service_details,
-                                hearingNotes: c.hearing_notes,
-                                mainServices: c.main_services,
-
-                                urlLp1: c.url_lp1,
-                                urlLp2: c.url_lp2,
-                                urlLp3: c.url_lp3,
-                                urlWeb1: c.url_web1,
-                                urlWeb2: c.url_web2,
-                                urlWeb3: c.url_web3,
-
-                                urlHotpepper: c.url_hotpepper,
-                                urlInstagram: c.url_instagram,
-                                urlLine: c.url_line,
-                                urlTiktok: c.url_tiktok,
-                                urlX: c.url_x,
-                                urlYoutube: c.url_youtube,
-
-                                metaAdAccountId: c.meta_ad_account_id,
-                                pixelId: c.pixel_id,
-                                metaFbPage: c.meta_fb_page,
-                                metaIgAccount: c.meta_ig_account,
-
-                                googleCustomerId: c.google_customer_id,
-                                googleClientGmail: c.google_client_gmail,
-
-                                metaTargetCv: c.meta_target_cv,
-                                metaTargetCpa: c.target_cpa,
-                                metaLimitCpa: c.limit_cpa,
-
-                                googleTargetCv: c.google_target_cv,
-                                googleTargetCpa: c.google_target_cpa,
-                                googleLimitCpa: c.google_limit_cpa,
-
-                                urlGooglePhoto: c.url_google_photo,
-                                urlDrive: c.url_drive,
-                                urlDropbox: c.url_dropbox,
-                                urlOtherStorage: c.url_other_storage,
-                                urlCreativeFolder: c.url_creative_folder,
-
-                                // Map the raw ad_metrics data for dynamic sum downstream
-                                rawMetrics: rawMetrics,
-                                spend: 0, 
-                                prevSpend: 0, 
-                                cvs: 0, 
-                                prevCvs: 0, 
-                                cpa: 0, 
-                                clicks: 0, 
-                                impressions: 0, 
-                                historyCvs: [],
+                                id: c.id, name: c.name, assignee: c.assignee, clientContactName: c.client_contact_name, status: autoStatus,
+                                budget: c.budget || 0, targetCpa: c.target_cpa || 0, limitCpa: c.limit_cpa || 0, plan: c.plan, contractDate: c.contract_date, viewPassword: c.view_password,
+                                representativeName: c.representative_name, metaPlan: c.meta_plan, googlePlan: c.google_plan, lpVendor: c.lp_vendor, specialNotes: c.special_notes,
+                                businessDetails: c.business_details, serviceDetails: c.service_details, hearingNotes: c.hearing_notes, mainServices: c.main_services,
+                                urlLp1: c.url_lp1, urlLp2: c.url_lp2, urlLp3: c.url_lp3, urlWeb1: c.url_web1, urlWeb2: c.url_web2, urlWeb3: c.url_web3,
+                                urlHotpepper: c.url_hotpepper, urlInstagram: c.url_instagram, urlLine: c.url_line, urlTiktok: c.url_tiktok, urlX: c.url_x, urlYoutube: c.url_youtube,
+                                metaAdAccountId: c.meta_ad_account_id, pixelId: c.pixel_id, metaFbPage: c.meta_fb_page, metaIgAccount: c.meta_ig_account,
+                                googleCustomerId: c.google_customer_id, googleClientGmail: c.google_client_gmail, metaTargetCv: c.meta_target_cv, metaTargetCpa: c.target_cpa, metaLimitCpa: c.limit_cpa,
+                                googleTargetCv: c.google_target_cv, googleTargetCpa: c.google_target_cpa, googleLimitCpa: c.google_limit_cpa,
+                                urlGooglePhoto: c.url_google_photo, urlDrive: c.url_drive, urlDropbox: c.url_dropbox, urlOtherStorage: c.url_other_storage, urlCreativeFolder: c.url_creative_folder,
+                                rawMetrics: rawMetrics, spend: 0, prevSpend: 0, cvs: 0, prevCvs: 0, cpa: 0, clicks: 0, impressions: 0, historyCvs: [],
                                 alerts: alerts
                             };
                         });

@@ -250,7 +250,7 @@
             );
         };
 
-        const ClientList = ({ clients, onSelectClient, onAddNew, onUpdateClient, onReloadData, onFetchMetaAds, isFetchingMeta }) => {
+        const ClientList = ({ role = 'admin', clients, onSelectClient, onAddNew, onUpdateClient, onReloadData, onFetchMetaAds, isFetchingMeta }) => {
             const [search, setSearch] = useState("");
             const [assigneeFilter, setAssigneeFilter] = useState("all");
             const [dateRange, setDateRange] = useState("this_month");
@@ -343,7 +343,9 @@
             return (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 pb-20">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                        <h2 className="text-2xl font-bold tracking-tight text-slate-900">クライアント一覧</h2>
+                        <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+                            {role === 'admin' ? 'クライアント一覧' : 'グループ店舗一覧'}
+                        </h2>
                         <div className="flex flex-wrap items-center gap-3">
                             <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="pl-3 pr-8 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:border-primary appearance-none bg-white font-medium cursor-pointer shadow-sm">
                                 <option value="yesterday">昨日</option>
@@ -360,16 +362,20 @@
                                     <input type="date" value={customEndDate} onChange={e => setCustomEndDate(e.target.value)} className="bg-white border border-slate-200 rounded-md shadow-sm px-3 py-2 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer hover:bg-slate-50 transition-colors" />
                                 </div>
                             )}
-                            <div className="relative border border-slate-200 rounded-md shadow-sm">
-                                <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className="pl-3 pr-8 py-2 w-full text-sm block appearance-none bg-white rounded-md focus:outline-none focus:border-primary font-medium text-slate-700 cursor-pointer">
-                                    <option value="all">全担当者</option>
-                                    {uniqueAssignees.map(a => <option key={a} value={a}>{a}</option>)}
-                                </select>
-                                <Icon name="Filter" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                            </div>
+                            {role === 'admin' && (
+                                <div className="relative border border-slate-200 rounded-md shadow-sm">
+                                    <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className="pl-3 pr-8 py-2 w-full text-sm block appearance-none bg-white rounded-md focus:outline-none focus:border-primary font-medium text-slate-700 cursor-pointer">
+                                        <option value="all">全担当者</option>
+                                        {uniqueAssignees.map(a => <option key={a} value={a}>{a}</option>)}
+                                    </select>
+                                    <Icon name="Filter" size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                </div>
+                            )}
                             <input type="text" placeholder="キーワード検索" className="pl-3 pr-4 py-2 border border-slate-200 rounded-md text-sm min-w-[200px] shadow-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
 
-                            <button onClick={onAddNew} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 shadow-sm transition-colors"><Icon name="Plus" size={16} /> 新規登録</button>
+                            {role === 'admin' && (
+                                <button onClick={onAddNew} className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md font-medium text-sm flex items-center gap-2 shadow-sm transition-colors"><Icon name="Plus" size={16} /> 新規登録</button>
+                            )}
                         </div>
                     </div>
                     <Card className="overflow-hidden shadow-sm">
@@ -568,7 +574,7 @@
             "リンク先": ["遷移先URL変更", "UTMパラメータ追加・変更", "遷移先停止/差し替え", "その他"]
         };
 
-        const DashboardDetail = ({ role, client, onBack, onUpdateClient, onDeleteClient, onFetchMetaAds, isFetchingMeta, teamMembers }) => {
+        const DashboardDetail = ({ role, client, onBack, onUpdateClient, onDeleteClient, onFetchMetaAds, isFetchingMeta, teamMembers, groupClients, onSwitchClient }) => {
             const [expandedRows, setExpandedRows] = useState(new Set([]));
             const [activeTab, setActiveTab] = useState("dashboard");
             const [activeInfoTab, setActiveInfoTab] = useState("basic");
@@ -1178,6 +1184,20 @@
                                     </div>
                                 )}
                             </div>
+                            {groupClients && groupClients.length > 1 && (
+                                <div className="flex items-center gap-2 mt-2 mb-4 bg-white p-1.5 rounded-lg shadow-sm border border-slate-200 w-fit animate-in fade-in slide-in-from-top-1 duration-300">
+                                    <span className="text-xs font-bold text-slate-500 pl-2 pr-1">店舗切替:</span>
+                                    {groupClients.map(c => (
+                                        <button
+                                            key={c.id}
+                                            onClick={() => onSwitchClient(c)}
+                                            className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${client.id === c.id ? 'bg-primary text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'}`}
+                                        >
+                                            {c.name}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-slate-600 bg-white p-3 rounded-lg border border-slate-200 shadow-sm w-fit">
                                 {['assignee', 'budget', 'targetCpa', 'limitCpa'].map(field => {
                                     const labels = { assignee: '運用担当者', budget: '予算', targetCpa: '目標CPA', limitCpa: '限界CPA' };
@@ -2284,7 +2304,7 @@
         };
 
 
-        const LoginScreen = ({ onLogin }) => {
+        const LoginScreen = ({ onLogin, clients }) => {
             const [password, setPassword] = useState("");
             const [error, setError] = useState("");
             
@@ -2294,108 +2314,17 @@
                 if (password === "admin2026") {
                     onLogin('admin', null);
                 } else if (password) {
-                    if (window.supabase) {
-                        try {
-                            const { data, error: sbError } = await window.supabase
-                                .from('clients')
-                                .select('*, ad_metrics!ad_metrics_client_id_fkey(*)')
-                                .eq('view_password', password)
-                                .single();
-                            if (sbError || !data) {
-                                setError("パスワードが間違っています");
-                            } else {
-                                const rawMetrics = Array.isArray(data.ad_metrics) ? data.ad_metrics : (data.ad_metrics ? [data.ad_metrics] : []);
-
-                                let autoStatus = data.status;
-                                if (autoStatus !== 'alert' && autoStatus !== 'rejected') {
-                                    const sortedMetrics = [...rawMetrics].sort((a, b) => {
-                                        const dateA = new Date(a.fetched_date || a.created_at || 0).getTime();
-                                        const dateB = new Date(b.fetched_date || b.created_at || 0).getTime();
-                                        return dateB - dateA;
-                                    });
-                                    const latestMetric = sortedMetrics.length > 0 ? sortedMetrics[0] : null;
-                                    const latestImpressions = latestMetric ? (parseInt(latestMetric.impressions) || 0) : 0;
-                                    autoStatus = latestImpressions > 0 ? 'active' : 'paused';
-                                }
-
-                                const mappedData = {
-                                    id: data.id,
-                                    name: data.name,
-                                    assignee: data.assignee,
-                                    clientContactName: data.client_contact_name,
-                                    status: autoStatus,
-                                    budget: data.budget || 0,
-                                    targetCpa: data.target_cpa || 0,
-                                    limitCpa: data.limit_cpa || 0,
-                                    plan: data.plan,
-                                    contractDate: data.contract_date,
-                                    viewPassword: data.view_password,
-                                    
-                                    representativeName: data.representative_name,
-                                    metaPlan: data.meta_plan,
-                                    googlePlan: data.google_plan,
-                                    lpVendor: data.lp_vendor,
-                                    specialNotes: data.special_notes,
-
-                                    businessDetails: data.business_details,
-                                    serviceDetails: data.service_details,
-                                    hearingNotes: data.hearing_notes,
-                                    mainServices: data.main_services,
-
-                                    urlLp1: data.url_lp1,
-                                    urlLp2: data.url_lp2,
-                                    urlLp3: data.url_lp3,
-                                    urlWeb1: data.url_web1,
-                                    urlWeb2: data.url_web2,
-                                    urlWeb3: data.url_web3,
-
-                                    urlHotpepper: data.url_hotpepper,
-                                    urlInstagram: data.url_instagram,
-                                    urlLine: data.url_line,
-                                    urlTiktok: data.url_tiktok,
-                                    urlX: data.url_x,
-                                    urlYoutube: data.url_youtube,
-
-                                    metaAdAccountId: data.meta_ad_account_id,
-                                    pixelId: data.pixel_id,
-                                    metaFbPage: data.meta_fb_page,
-                                    metaIgAccount: data.meta_ig_account,
-
-                                    googleCustomerId: data.google_customer_id,
-                                    googleClientGmail: data.google_client_gmail,
-
-                                    metaTargetCv: data.meta_target_cv,
-                                    metaTargetCpa: data.target_cpa,
-                                    metaLimitCpa: data.limit_cpa,
-
-                                    googleTargetCv: data.google_target_cv,
-                                    googleTargetCpa: data.google_target_cpa,
-                                    googleLimitCpa: data.google_limit_cpa,
-
-                                    urlGooglePhoto: data.url_google_photo,
-                                    urlDrive: data.url_drive,
-                                    urlDropbox: data.url_dropbox,
-                                    urlOtherStorage: data.url_other_storage,
-                                    urlCreativeFolder: data.url_creative_folder,
-
-                                    rawMetrics: rawMetrics,
-                                    spend: 0, 
-                                    prevSpend: 0, 
-                                    cvs: 0, 
-                                    prevCvs: 0, 
-                                    cpa: 0, 
-                                    clicks: 0, 
-                                    impressions: 0, 
-                                    historyCvs: []
-                                };
-
-                                onLogin('client', mappedData);
-                            }
-                        } catch (err) {
-                            setError("パスワードが間違っています");
+                    const clientMatch = clients.find(c => c.viewPassword === password);
+                    if (clientMatch) {
+                        let groupMembers = [];
+                        if (clientMatch.groupName) {
+                            groupMembers = clients.filter(c => c.groupName === clientMatch.groupName);
+                        } else {
+                            groupMembers = [clientMatch];
                         }
+                        onLogin('client', clientMatch, groupMembers);
                     } else {
-                        setError("データベース接続がありません (開発環境用)");
+                        setError("パスワードが正しくありません。");
                     }
                 }
             };
@@ -2488,6 +2417,7 @@
             const [isLoading, setIsLoading] = useState(true);
             const [view, setView] = useState("clientList");
             const [selectedClient, setSelectedClient] = useState(null);
+            const [groupClients, setGroupClients] = useState([]);
             
             const [isFetchingMeta, setIsFetchingMeta] = useState(false);
             const [teamMembers, setTeamMembers] = useState([]);
@@ -2870,12 +2800,18 @@
                 }
             };
 
-            if (!isAuthenticated) return <LoginScreen onLogin={(role, clientData) => { 
+            if (!isAuthenticated) return <LoginScreen clients={clients} onLogin={(role, clientData, groupMembers) => { 
                 setIsAuthenticated(true); 
                 setCurrentUserRole(role); 
                 if (role === 'client' && clientData) {
-                    setSelectedClient(clientData);
-                    setView('dashboard');
+                    setGroupClients(groupMembers || [clientData]);
+                    if (groupMembers && groupMembers.length > 1) {
+                        setView('clientList');
+                        setSelectedClient(null);
+                    } else {
+                        setSelectedClient(clientData);
+                        setView('dashboard');
+                    }
                 }
             }} />;
 
@@ -2908,8 +2844,8 @@
                         </aside>
                     )}
                     <main className="flex-1 p-6 md:p-8 lg:p-10 max-w-7xl mx-auto w-full overflow-x-hidden">
-                        {view === "clientList" && <ClientList clients={clients} onSelectClient={handleSelectClient} onAddNew={handleAddNew} onUpdateClient={handleUpdateClient} onReloadData={fetchClients} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} />}
-                        {view === "dashboard" && selectedClient && <DashboardDetail role={currentUserRole} client={selectedClient} onBack={handleBackToList} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} teamMembers={teamMembers} />}
+                        {view === "clientList" && <ClientList role={currentUserRole} clients={currentUserRole === 'admin' ? clients : groupClients} onSelectClient={handleSelectClient} onAddNew={handleAddNew} onUpdateClient={handleUpdateClient} onReloadData={fetchClients} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} />}
+                        {view === "dashboard" && selectedClient && <DashboardDetail role={currentUserRole} client={selectedClient} groupClients={groupClients} onSwitchClient={setSelectedClient} onBack={handleBackToList} onUpdateClient={handleUpdateClient} onDeleteClient={handleDeleteClient} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} teamMembers={teamMembers} />}
                         {view === "addClient" && <AddClientForm onSave={handleSaveNewClient} onCancel={handleBackToList} teamMembers={teamMembers} />}
                         {view === "settings" && <SettingsView teamMembers={teamMembers} onAddMember={handleAddTeamMember} handleDeleteTeamMember={handleDeleteTeamMember} onBack={handleBackToList} onFetchMetaAds={handleFetchMetaAds} isFetchingMeta={isFetchingMeta} />}
                     </main>

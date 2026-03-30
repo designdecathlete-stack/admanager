@@ -2545,6 +2545,7 @@
             const handleSaveNewClient = async (newClient) => {
                 if (!supabase) {
                     setClients(prev => [newClient, ...prev]);
+                    alert("新規クライアントの登録が完了しました！");
                     setView("clientList");
                     return;
                 }
@@ -2575,6 +2576,7 @@
                             limitCpa: c.limit_cpa,
                             plan: c.plan,
                             contractDate: c.contract_date,
+                            viewPassword: c.view_password,
                             representativeName: c.representative_name,
                             businessDetails: c.business_details,
                             mainServices: c.main_services,
@@ -2588,6 +2590,7 @@
                             spend: 0, prevSpend: 0, cvs: 0, prevCvs: 0, cpa: 0, clicks: 0, impressions: 0, historyCvs: []
                         };
                         setClients(prev => [mapped, ...prev]);
+                        alert("新規クライアントの登録が完了しました！");
                     }
                 } catch(e) {
                     console.error("Error saving new client", e);

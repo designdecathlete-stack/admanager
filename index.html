@@ -2625,101 +2625,78 @@
             
             const handleUpdateClient = async (updatedClient) => {
                 const info = updatedClient.info || {};
-                const newClientData = {
-                    ...updatedClient,
-                    groupName: info.groupName !== undefined ? info.groupName : updatedClient.groupName,
-                    companyName: info.companyName !== undefined ? info.companyName : updatedClient.companyName,
-                    viewPassword: info.viewPassword !== undefined ? info.viewPassword : updatedClient.viewPassword,
-                    representativeName: info.representativeName !== undefined ? info.representativeName : updatedClient.representativeName,
-                    chatworkGroupId: info.chatworkGroupId !== undefined ? info.chatworkGroupId : updatedClient.chatworkGroupId,
-                    internalLarkUrl: info.internalLarkUrl !== undefined ? info.internalLarkUrl : updatedClient.internalLarkUrl,
-                    metaAdManagerUrl: info.metaAdManagerUrl !== undefined ? info.metaAdManagerUrl : updatedClient.metaAdManagerUrl,
-                    googleAdManagerUrl: info.googleAdManagerUrl !== undefined ? info.googleAdManagerUrl : updatedClient.googleAdManagerUrl,
+                const merged = { ...updatedClient, ...info };
+                
+                setClients(prev => prev.map(c => c.id === updatedClient.id ? merged : c));
+                if (selectedClient && selectedClient.id === updatedClient.id) {
+                    setSelectedClient(merged);
+                }
+
+                if (!supabase || ("" + updatedClient.id).startsWith("cl")) return;
+
+                const getVal = (iVal, cVal) => (iVal !== undefined ? iVal : cVal) || null;
+                const getNum = (iVal, cVal) => {
+                    const v = iVal !== undefined ? iVal : cVal;
+                    return v === "" || v === undefined ? null : parseFloat(v);
                 };
 
-                setClients(prev => prev.map(c => c.id === updatedClient.id ? newClientData : c));
-                setSelectedClient(prev => prev && prev.id === updatedClient.id ? newClientData : prev);
-                
-                if (!supabase || ("" + updatedClient.id).startsWith("cl")) return; // Mock data
-                
+                const updateData = {
+                    name: getVal(info.name, updatedClient.name),
+                    assignee: getVal(info.assignee, updatedClient.assignee),
+                    status: getVal(info.status, updatedClient.status),
+                    budget: getNum(info.budget, updatedClient.budget),
+                    group_name: getVal(info.groupName, updatedClient.groupName),
+                    company_name: getVal(info.companyName, updatedClient.companyName),
+                    view_password: getVal(info.viewPassword, updatedClient.viewPassword),
+                    representative_name: getVal(info.representativeName, updatedClient.representativeName),
+                    client_contact_name: getVal(info.clientContactName, updatedClient.clientContactName),
+                    chatwork_group_id: getVal(info.chatworkGroupId, updatedClient.chatworkGroupId),
+                    internal_lark_url: getVal(info.internalLarkUrl, updatedClient.internalLarkUrl),
+                    meta_ad_manager_url: getVal(info.metaAdManagerUrl, updatedClient.metaAdManagerUrl),
+                    google_ad_manager_url: getVal(info.googleAdManagerUrl, updatedClient.googleAdManagerUrl),
+                    meta_plan: getVal(info.metaAdPlan, updatedClient.metaPlan),
+                    google_plan: getVal(info.googleAdPlan, updatedClient.googlePlan),
+                    lp_vendor: getVal(info.lpCreator, updatedClient.lpVendor),
+                    special_notes: getVal(info.contractNotes, updatedClient.specialNotes),
+                    business_details: getVal(info.businessDetails, updatedClient.businessDetails),
+                    service_details: getVal(info.serviceDetails, updatedClient.serviceDetails),
+                    hearing_notes: getVal(info.initialHearing, updatedClient.hearingNotes),
+                    main_services: getVal(info.services, updatedClient.mainServices),
+                    meta_ad_account_id: getVal(info.metaAdAccountId, updatedClient.metaAdAccountId),
+                    pixel_id: getVal(info.pixelId, updatedClient.pixelId),
+                    meta_fb_page: getVal(info.metaFacebookPage, updatedClient.metaFbPage),
+                    meta_ig_account: getVal(info.metaInstagramAccount, updatedClient.metaIgAccount),
+                    google_customer_id: getVal(info.googleAdAccountId, updatedClient.googleCustomerId),
+                    google_client_gmail: getVal(info.googleClientGmail, updatedClient.googleClientGmail),
+                    meta_target_cv: getNum(info.metaTargetConversions, updatedClient.metaTargetCv),
+                    target_cpa: getNum(info.metaTargetCpa, updatedClient.metaTargetCpa),
+                    limit_cpa: getNum(info.metaLimitCpa, updatedClient.metaLimitCpa),
+                    google_target_cv: getNum(info.googleTargetConversions, updatedClient.googleTargetCv),
+                    google_target_cpa: getNum(info.googleTargetCpa, updatedClient.googleTargetCpa),
+                    google_limit_cpa: getNum(info.googleLimitCpa, updatedClient.googleLimitCpa),
+                    url_lp1: getVal(info.lpUrl1, updatedClient.urlLp1),
+                    url_lp2: getVal(info.lpUrl2, updatedClient.urlLp2),
+                    url_lp3: getVal(info.lpUrl3, updatedClient.urlLp3),
+                    url_web1: getVal(info.websiteUrl1, updatedClient.urlWeb1),
+                    url_web2: getVal(info.websiteUrl2, updatedClient.urlWeb2),
+                    url_web3: getVal(info.websiteUrl3, updatedClient.urlWeb3),
+                    url_hotpepper: getVal(info.hotpepperUrl, updatedClient.urlHotpepper),
+                    url_instagram: getVal(info.instagramUrl, updatedClient.urlInstagram),
+                    url_line: getVal(info.lineUrl, updatedClient.urlLine),
+                    url_tiktok: getVal(info.tiktokUrl, updatedClient.urlTiktok),
+                    url_x: getVal(info.xUrl, updatedClient.urlX),
+                    url_youtube: getVal(info.youtubeUrl, updatedClient.urlYoutube),
+                    url_google_photo: getVal(info.assetGooglePhoto, updatedClient.urlGooglePhoto),
+                    url_drive: getVal(info.assetGoogleDrive, updatedClient.urlDrive),
+                    url_dropbox: getVal(info.assetDropbox, updatedClient.urlDropbox),
+                    url_other_storage: getVal(info.assetOther, updatedClient.urlOtherStorage),
+                    url_creative_folder: getVal(info.creativeStorageUrl, updatedClient.urlCreativeFolder)
+                };
+
                 try {
-                    // Extract info sub-object if it was updated via Account Info tab
-
-                    const getVal = (iVal, cVal) => {
-                        const v = iVal !== undefined ? iVal : cVal;
-                        return v === "" || v === undefined ? null : v;
-                    };
-                    const getNum = (iVal, cVal) => {
-                        const v = iVal !== undefined ? iVal : cVal;
-                        return v === "" || v === undefined ? null : parseFloat(v);
-                    };
-
-                    const updateData = {
-                        group_name: getVal(info.groupName, updatedClient.groupName),
-                        company_name: getVal(info.companyName, updatedClient.companyName),
-                        name: updatedClient.name !== "" && updatedClient.name !== undefined ? updatedClient.name : null,
-                        assignee: updatedClient.assignee !== undefined ? updatedClient.assignee : null,
-                        client_contact_name: getVal(info.clientContactName, updatedClient.clientContactName),
-                        view_password: getVal(info.viewPassword, updatedClient.viewPassword),
-                        status: updatedClient.status !== "" && updatedClient.status !== undefined ? updatedClient.status : null,
-                        budget: updatedClient.budget !== "" && updatedClient.budget !== undefined ? parseFloat(updatedClient.budget) : null,
-                        
-                        representative_name: getVal(info.representativeName, updatedClient.representativeName),
-                        meta_plan: getVal(info.metaAdPlan, updatedClient.metaPlan),
-                        google_plan: getVal(info.googleAdPlan, updatedClient.googlePlan),
-                        lp_vendor: getVal(info.lpCreator, updatedClient.lpVendor),
-                        special_notes: getVal(info.contractNotes, updatedClient.specialNotes),
-                        chatwork_group_id: getVal(info.chatworkGroupId, updatedClient.chatworkGroupId),
-                        internal_lark_url: getVal(info.internalLarkUrl, updatedClient.internalLarkUrl),
-                        meta_ad_manager_url: getVal(info.metaAdManagerUrl, updatedClient.metaAdManagerUrl),
-                        google_ad_manager_url: getVal(info.googleAdManagerUrl, updatedClient.googleAdManagerUrl),
-
-                        business_details: getVal(info.businessDetails, updatedClient.businessDetails),
-                        service_details: getVal(info.serviceDetails, updatedClient.serviceDetails),
-                        hearing_notes: getVal(info.initialHearing, updatedClient.hearingNotes),
-                        main_services: getVal(info.services, updatedClient.mainServices),
-
-                        url_lp1: getVal(info.lpUrl1, updatedClient.urlLp1),
-                        url_lp2: getVal(info.lpUrl2, updatedClient.urlLp2),
-                        url_lp3: getVal(info.lpUrl3, updatedClient.urlLp3),
-                        url_web1: getVal(info.websiteUrl1, updatedClient.urlWeb1),
-                        url_web2: getVal(info.websiteUrl2, updatedClient.urlWeb2),
-                        url_web3: getVal(info.websiteUrl3, updatedClient.urlWeb3),
-
-                        url_hotpepper: getVal(info.hotpepperUrl, updatedClient.urlHotpepper),
-                        url_instagram: getVal(info.instagramUrl, updatedClient.urlInstagram),
-                        url_line: getVal(info.lineUrl, updatedClient.urlLine),
-                        url_tiktok: getVal(info.tiktokUrl, updatedClient.urlTiktok),
-                        url_x: getVal(info.xUrl, updatedClient.urlX),
-                        url_youtube: getVal(info.youtubeUrl, updatedClient.urlYoutube),
-
-                        meta_ad_account_id: getVal(info.metaAdAccountId, updatedClient.metaAdAccountId),
-                        pixel_id: getVal(info.pixelId, updatedClient.pixelId),
-                        meta_fb_page: getVal(info.metaFacebookPage, updatedClient.metaFbPage),
-                        meta_ig_account: getVal(info.metaInstagramAccount, updatedClient.metaIgAccount),
-
-                        google_customer_id: getVal(info.googleAdAccountId, updatedClient.googleCustomerId),
-                        google_client_gmail: getVal(info.googleClientGmail, updatedClient.googleClientGmail),
-
-                        meta_target_cv: getNum(info.metaTargetConversions, updatedClient.metaTargetCv),
-                        target_cpa: getNum(info.metaTargetCpa, updatedClient.metaTargetCpa),
-                        limit_cpa: getNum(info.metaLimitCpa, updatedClient.metaLimitCpa),
-
-                        google_target_cv: getNum(info.googleTargetConversions, updatedClient.googleTargetCv),
-                        google_target_cpa: getNum(info.googleTargetCpa, updatedClient.googleTargetCpa),
-                        google_limit_cpa: getNum(info.googleLimitCpa, updatedClient.googleLimitCpa),
-
-                        url_google_photo: getVal(info.assetGooglePhoto, updatedClient.urlGooglePhoto),
-                        url_drive: getVal(info.assetGoogleDrive, updatedClient.urlDrive),
-                        url_dropbox: getVal(info.assetDropbox, updatedClient.urlDropbox),
-                        url_other_storage: getVal(info.assetOther, updatedClient.urlOtherStorage),
-                        url_creative_folder: getVal(info.creativeStorageUrl, updatedClient.urlCreativeFolder)
-                    };
-
                     const { error } = await supabase.from('clients').update(updateData).eq('id', updatedClient.id);
                     if (error) {
                         alert("保存に失敗しました: " + error.message);
-                        throw error;
                     }
                 } catch(e) {
                     console.error("Error updating client", e);

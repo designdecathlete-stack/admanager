@@ -735,7 +735,7 @@ ${JSON.stringify(adsData, null, 2)}
 （結果を踏まえ、具体的に「どんな訴求」や「どんなビジュアル」のバナー/動画を新しく制作・テストすべきか、3つ提案してください）`;
 
                 try {
-                    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + geminiApiKey, {
+                    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + geminiApiKey, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt + "\n\n" + userQuery }] }] })

@@ -399,11 +399,11 @@
                                             <tr key={client.id} onClick={() => onSelectClient(client)} className="border-b border-slate-100 hover:bg-slate-50/80 transition-all cursor-pointer relative z-0">
                                                 <td className="p-3 align-middle font-medium max-w-[200px] sm:max-w-[300px] md:max-w-[400px] lg:max-w-[500px]">
                                                     <div className="flex items-start gap-3 w-full">
-                                                        <div className="w-10 h-10 mt-0.5 rounded-md bg-white text-primary flex items-center justify-center text-sm font-bold shadow-sm border border-slate-200 shrink-0">{client.name.charAt(0)}</div>
+                                                        <div className="w-10 h-10 mt-0.5 rounded-md bg-white text-primary flex items-center justify-center text-sm font-bold shadow-sm border border-slate-200 shrink-0">{client.name ? client.name.charAt(0) : ''}</div>
                                                         <div className="min-w-0 pr-2 overflow-hidden flex-1 flex flex-col justify-center">
-                                                            <div className="text-[10px] text-slate-500 font-medium truncate mb-0.5" title={client.companyName || '法人名未設定'}>{client.companyName || '法人名未設定'}</div>
-                                                            <div className="text-slate-900 text-[13px] font-bold truncate leading-tight tracking-tight" title={client.name}>{client.name}</div>
-                                                            <div className="text-[10px] text-slate-400 font-normal mt-0.5 truncate uppercase tracking-widest">{client.adAccountId || 'ID未設定'}</div>
+                                                            <div className="text-[10px] text-slate-400 truncate" title={client.companyName}>{client.companyName}</div>
+                                                            <div className="text-sm font-bold text-slate-900 truncate" title={client.name}>{client.name}</div>
+                                                            <div className="text-[10px] text-slate-300 truncate">{client.adAccountId}</div>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -2624,14 +2624,26 @@
             };
             
             const handleUpdateClient = async (updatedClient) => {
-                setClients(prev => prev.map(c => c.id === updatedClient.id ? updatedClient : c));
-                setSelectedClient(prev => prev && prev.id === updatedClient.id ? updatedClient : prev);
+                const info = updatedClient.info || {};
+                const newClientData = {
+                    ...updatedClient,
+                    groupName: info.groupName !== undefined ? info.groupName : updatedClient.groupName,
+                    companyName: info.companyName !== undefined ? info.companyName : updatedClient.companyName,
+                    viewPassword: info.viewPassword !== undefined ? info.viewPassword : updatedClient.viewPassword,
+                    representativeName: info.representativeName !== undefined ? info.representativeName : updatedClient.representativeName,
+                    chatworkGroupId: info.chatworkGroupId !== undefined ? info.chatworkGroupId : updatedClient.chatworkGroupId,
+                    internalLarkUrl: info.internalLarkUrl !== undefined ? info.internalLarkUrl : updatedClient.internalLarkUrl,
+                    metaAdManagerUrl: info.metaAdManagerUrl !== undefined ? info.metaAdManagerUrl : updatedClient.metaAdManagerUrl,
+                    googleAdManagerUrl: info.googleAdManagerUrl !== undefined ? info.googleAdManagerUrl : updatedClient.googleAdManagerUrl,
+                };
+
+                setClients(prev => prev.map(c => c.id === updatedClient.id ? newClientData : c));
+                setSelectedClient(prev => prev && prev.id === updatedClient.id ? newClientData : prev);
                 
                 if (!supabase || ("" + updatedClient.id).startsWith("cl")) return; // Mock data
                 
                 try {
                     // Extract info sub-object if it was updated via Account Info tab
-                    const info = updatedClient.info || {};
 
                     const getVal = (iVal, cVal) => {
                         const v = iVal !== undefined ? iVal : cVal;

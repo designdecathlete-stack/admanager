@@ -2129,11 +2129,100 @@
                 } else if (password) {
                     if (window.supabase) {
                         try {
-                            const { data, error: sbError } = await window.supabase.from('clients').select('*').eq('view_password', password).single();
+                            const { data, error: sbError } = await window.supabase
+                                .from('clients')
+                                .select('*, ad_metrics!ad_metrics_client_id_fkey(*)')
+                                .eq('view_password', password)
+                                .single();
                             if (sbError || !data) {
                                 setError("パスワードが間違っています");
                             } else {
-                                onLogin('client', data);
+                                const rawMetrics = Array.isArray(data.ad_metrics) ? data.ad_metrics : (data.ad_metrics ? [data.ad_metrics] : []);
+
+                                let autoStatus = data.status;
+                                if (autoStatus !== 'alert' && autoStatus !== 'rejected') {
+                                    const sortedMetrics = [...rawMetrics].sort((a, b) => {
+                                        const dateA = new Date(a.fetched_date || a.created_at || 0).getTime();
+                                        const dateB = new Date(b.fetched_date || b.created_at || 0).getTime();
+                                        return dateB - dateA;
+                                    });
+                                    const latestMetric = sortedMetrics.length > 0 ? sortedMetrics[0] : null;
+                                    const latestImpressions = latestMetric ? (parseInt(latestMetric.impressions) || 0) : 0;
+                                    autoStatus = latestImpressions > 0 ? 'active' : 'paused';
+                                }
+
+                                const mappedData = {
+                                    id: data.id,
+                                    name: data.name,
+                                    assignee: data.assignee,
+                                    clientContactName: data.client_contact_name,
+                                    status: autoStatus,
+                                    budget: data.budget || 0,
+                                    targetCpa: data.target_cpa || 0,
+                                    limitCpa: data.limit_cpa || 0,
+                                    plan: data.plan,
+                                    contractDate: data.contract_date,
+                                    viewPassword: data.view_password,
+                                    
+                                    representativeName: data.representative_name,
+                                    metaPlan: data.meta_plan,
+                                    googlePlan: data.google_plan,
+                                    lpVendor: data.lp_vendor,
+                                    specialNotes: data.special_notes,
+
+                                    businessDetails: data.business_details,
+                                    serviceDetails: data.service_details,
+                                    hearingNotes: data.hearing_notes,
+                                    mainServices: data.main_services,
+
+                                    urlLp1: data.url_lp1,
+                                    urlLp2: data.url_lp2,
+                                    urlLp3: data.url_lp3,
+                                    urlWeb1: data.url_web1,
+                                    urlWeb2: data.url_web2,
+                                    urlWeb3: data.url_web3,
+
+                                    urlHotpepper: data.url_hotpepper,
+                                    urlInstagram: data.url_instagram,
+                                    urlLine: data.url_line,
+                                    urlTiktok: data.url_tiktok,
+                                    urlX: data.url_x,
+                                    urlYoutube: data.url_youtube,
+
+                                    metaAdAccountId: data.meta_ad_account_id,
+                                    pixelId: data.pixel_id,
+                                    metaFbPage: data.meta_fb_page,
+                                    metaIgAccount: data.meta_ig_account,
+
+                                    googleCustomerId: data.google_customer_id,
+                                    googleClientGmail: data.google_client_gmail,
+
+                                    metaTargetCv: data.meta_target_cv,
+                                    metaTargetCpa: data.target_cpa,
+                                    metaLimitCpa: data.limit_cpa,
+
+                                    googleTargetCv: data.google_target_cv,
+                                    googleTargetCpa: data.google_target_cpa,
+                                    googleLimitCpa: data.google_limit_cpa,
+
+                                    urlGooglePhoto: data.url_google_photo,
+                                    urlDrive: data.url_drive,
+                                    urlDropbox: data.url_dropbox,
+                                    urlOtherStorage: data.url_other_storage,
+                                    urlCreativeFolder: data.url_creative_folder,
+
+                                    rawMetrics: rawMetrics,
+                                    spend: 0, 
+                                    prevSpend: 0, 
+                                    cvs: 0, 
+                                    prevCvs: 0, 
+                                    cpa: 0, 
+                                    clicks: 0, 
+                                    impressions: 0, 
+                                    historyCvs: []
+                                };
+
+                                onLogin('client', mappedData);
                             }
                         } catch (err) {
                             setError("パスワードが間違っています");

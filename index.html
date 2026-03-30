@@ -1150,6 +1150,26 @@
                         </div>
                     </header>
 
+                    {client.alerts && client.alerts.length > 0 && (
+                        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-md shadow-sm">
+                            <div className="flex items-center gap-2 font-bold text-red-800 mb-3">
+                                <Icon name="AlertOctagon" className="text-red-600" size={18} />
+                                システムからの警告
+                            </div>
+                            <div className="grid gap-3">
+                                {client.alerts.map((alert, idx) => (
+                                    <div key={idx} className="bg-white p-3 rounded border border-red-200 shadow-sm">
+                                        <h4 className="font-bold text-red-700 text-sm mb-1">{alert.title}</h4>
+                                        <p className="text-xs text-slate-700 leading-relaxed mb-3">{alert.desc}</p>
+                                        <a href={alert.link} target="_blank" rel="noopener noreferrer" className="text-xs text-red-600 bg-white border border-red-200 px-3 py-1 rounded shadow-sm hover:bg-red-50 transition flex items-center gap-1 w-fit">
+                                            マニュアルで対応方法を確認 <Icon name="ExternalLink" size={12}/>
+                                        </a>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* タブナビゲーション */}
                     <div className="border-b border-slate-200">
                         <nav className="-mb-px flex space-x-8 overflow-x-auto no-scrollbar" aria-label="Tabs">
@@ -2396,6 +2416,47 @@
                                 
                                 autoStatus = latestImpressions > 0 ? 'active' : 'paused';
                             }
+                            
+                            const today = new Date();
+                            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+                            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+                            const validMetrics = rawMetrics.filter(m => {
+                                const d = new Date(m.fetched_date || m.created_at || Date.now());
+                                return d >= firstDay && d <= lastDay;
+                            });
+                            const spend = validMetrics.reduce((sum, m) => sum + (parseFloat(m.spend) || 0), 0);
+                            const cvs = validMetrics.reduce((sum, m) => sum + (parseFloat(m.conversions) || 0), 0);
+
+                            const alerts = [];
+
+                            // 条件1: 予算消化率の異常（20%以上の乖離）
+                            if (c.budget > 0) {
+                              const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+                              const expectedPace = today.getDate() / daysInMonth;
+                              const actualPace = spend / c.budget;
+                              if (Math.abs(actualPace - expectedPace) >= 0.2) {
+                                const statusV = actualPace > expectedPace ? "過剰" : "遅れ";
+                                alerts.push({ title: "予算消化の異常", desc: `今月の予算に対する消化ペースが想定より20%以上乖離しています（${statusV}）。予算設定や1日あたりの上限を確認してください。`, link: "#manual-budget" });
+                              }
+                            }
+
+                            // 条件2: 結果（コンバージョン）が0
+                            if (spend > 0 && cvs === 0) {
+                              alerts.push({ title: "コンバージョン未発生", desc: "費用が発生しているにも関わらず、結果（CV）が0件です。コンバージョンタグの設定漏れや、リンク先URLのリンク切れを疑ってください。", link: "#manual-cv" });
+                            }
+
+                            // 条件3: 前日のインプレッション急減
+                            const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+                            const dayBefore = new Date(today); dayBefore.setDate(today.getDate() - 2);
+                            const yStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth()+1).padStart(2,'0')}-${String(yesterday.getDate()).padStart(2,'0')}`;
+                            const dbStr = `${dayBefore.getFullYear()}-${String(dayBefore.getMonth()+1).padStart(2,'0')}-${String(dayBefore.getDate()).padStart(2,'0')}`;
+
+                            const yImps = rawMetrics.filter(m => (m.fetched_date || "").startsWith(yStr)).reduce((sum, m) => sum + (parseInt(m.impressions)||0), 0);
+                            const dbImps = rawMetrics.filter(m => (m.fetched_date || "").startsWith(dbStr)).reduce((sum, m) => sum + (parseInt(m.impressions)||0), 0);
+
+                            if (dbImps > 0 && yImps === 0) {
+                              alerts.push({ title: "広告の停止疑い", desc: "前々日まで配信されていましたが、前日のインプレッションが0になっています。広告アカウントの停止、審査落ち、または残高不足の可能性があります。", link: "#manual-stop" });
+                            }
 
                             return {
                                 id: c.id,
@@ -2466,7 +2527,8 @@
                                 cpa: 0, 
                                 clicks: 0, 
                                 impressions: 0, 
-                                historyCvs: []
+                                historyCvs: [],
+                                alerts: alerts
                             };
                         });
                         setClients(mapped);

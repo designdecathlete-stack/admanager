@@ -2523,6 +2523,9 @@
                     } else if (hash === '#/new') {
                         setView("addClient");
                         setSelectedClient(null);
+                    } else if (hash === '#/settings') {
+                        setView("settings");
+                        setSelectedClient(null);
                     } else {
                         setView("clientList");
                         setSelectedClient(null);
@@ -2540,7 +2543,12 @@
                 window.location.hash = `#/client/${client.id}`;
             };
             const handleBackToList = () => {
-                window.location.hash = '';
+                if (window.location.hash === '' || window.location.hash === '#') {
+                    setView("clientList");
+                    setSelectedClient(null);
+                } else {
+                    window.location.hash = '';
+                }
             };
             const handleAddNew = () => {
                 window.location.hash = '#/new';
@@ -2738,7 +2746,7 @@
                                     <Icon name="PlusCircle" size={18} className={view === 'addClient' ? "text-primary" : "text-slate-400"} />
                                     新規登録
                                 </button>
-                                <button onClick={() => { setView('settings'); setSelectedClient(null); }} className={`w-full flex items-center gap-3 px-3 py-2 rounded-md font-medium transition-colors ${view === 'settings' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                <button onClick={() => window.location.hash = '#/settings'} className={`w-full flex items-center gap-3 px-3 py-2 rounded-md font-medium transition-colors ${view === 'settings' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}>
                                     <Icon name="Settings" size={18} className={view === 'settings' ? "text-slate-700" : "text-slate-400"} />
                                     設定
                                 </button>

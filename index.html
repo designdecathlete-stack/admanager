@@ -754,6 +754,10 @@
                 companyName: client.name || "",
                 clientContactName: client.clientContactName || "",
                 viewPassword: client.viewPassword || "",
+                chatworkGroupId: client.chatworkGroupId || "",
+                internalLarkUrl: client.internalLarkUrl || "",
+                metaAdManagerUrl: client.metaAdManagerUrl || "",
+                googleAdManagerUrl: client.googleAdManagerUrl || "",
                 // Contracts
                 metaAdPlan: client.metaPlan || "",
                 googleAdPlan: client.googlePlan || "",
@@ -1650,6 +1654,7 @@
                             {activeInfoTab === 'basic' && (
                                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <div className="space-y-6">
                                     {/* Card 1: 担当者・連絡先 (Contacts) */}
                                     <Card className="p-5 border-slate-200 bg-white shadow-sm relative h-fit hover:shadow-md transition-shadow">
                                         <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
@@ -1662,7 +1667,9 @@
                                                 { id: 'representativeName', label: '代表者名' },
                                                 { id: 'companyName', label: '法人名' },
                                                 { id: 'clientContactName', label: '先方担当者名' },
-                                                { id: 'viewPassword', label: '閲覧用パスワード（クライアント共有用）' }
+                                                { id: 'viewPassword', label: '閲覧用パスワード（クライアント共有用）' },
+                                                { id: 'chatworkGroupId', label: 'ChatworkグループID' },
+                                                { id: 'internalLarkUrl', label: '社内Lark URL' }
                                             ].map(f => (
                                                 <div key={f.id}>
                                                     <div className="text-xs font-semibold text-slate-500 mb-1">{f.label}</div>
@@ -1670,7 +1677,13 @@
                                                         <input autoFocus type="text" value={clientInfo[f.id]} onChange={e => setClientInfo({ ...clientInfo, [f.id]: e.target.value })} onBlur={handleInfoSave} onKeyDown={e => e.key === 'Enter' && handleInfoSave()} className="w-full px-2 py-1 border rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20" />
                                                     ) : (
                                                         <div onClick={() => setEditingInfoField(f.id)} className="text-sm font-medium text-slate-800 cursor-pointer hover:bg-slate-50 hover:text-primary p-2 -m-2 rounded transition-colors group flex items-center justify-between border border-transparent hover:border-slate-200">
-                                                            <span>{clientInfo[f.id] || <span className="text-slate-400 font-normal">未設定</span>}</span>
+                                                            {f.id === 'internalLarkUrl' ? (
+                                                              <div className="flex-1 truncate pr-2">
+                                                                {clientInfo[f.id] ? <a href={clientInfo[f.id]} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-blue-600 hover:underline flex items-center gap-1.5 truncate"><Icon name="ExternalLink" size={12} className="shrink-0 text-blue-400" /><span className="truncate">{clientInfo[f.id]}</span></a> : <span className="text-slate-400 font-normal">未設定</span>}
+                                                              </div>
+                                                            ) : (
+                                                              <span>{clientInfo[f.id] || <span className="text-slate-400 font-normal">未設定</span>}</span>
+                                                            )}
                                                             <span className="text-xs font-normal text-slate-600 bg-white shadow-sm border border-slate-200 py-0.5 px-2 flex items-center gap-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shrink-0"><Icon name="Edit3" size={12} /> 編集</span>
                                                         </div>
                                                     )}
@@ -1678,6 +1691,36 @@
                                             ))}
                                         </div>
                                     </Card>
+
+                                    {/* Card 1.5: 広告管理画面への直リンク */}
+                                    <Card className="p-5 border-slate-200 bg-white shadow-sm relative h-fit hover:shadow-md transition-shadow">
+                                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                                            <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                                                <Icon name="Link2" size={16} className="text-pink-500" /> 広告管理画面への直リンク
+                                            </h4>
+                                        </div>
+                                        <div className="space-y-4">
+                                            {[
+                                                { id: 'metaAdManagerUrl', label: 'Meta広告マネージャーURL' },
+                                                { id: 'googleAdManagerUrl', label: 'Google広告管理画面URL' }
+                                            ].map(link => (
+                                                <div key={link.id}>
+                                                    <div className="text-xs font-semibold text-slate-500 mb-1">{link.label}</div>
+                                                    {editingInfoField === link.id ? (
+                                                        <input autoFocus type="url" value={clientInfo[link.id]} onChange={e => setClientInfo({ ...clientInfo, [link.id]: e.target.value })} onBlur={handleInfoSave} onKeyDown={e => e.key === 'Enter' && handleInfoSave()} className="w-full px-2 py-1 border rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20" />
+                                                    ) : (
+                                                        <div onClick={() => setEditingInfoField(link.id)} className="text-sm font-medium text-slate-800 cursor-pointer hover:bg-slate-50 hover:text-primary p-2 -m-2 rounded transition-colors group flex items-center justify-between border border-transparent hover:border-slate-200">
+                                                            <div className="flex-1 truncate pr-2">
+                                                              {clientInfo[link.id] ? <a href={clientInfo[link.id]} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-blue-600 hover:underline flex items-center gap-1.5 truncate"><Icon name="ExternalLink" size={12} className="shrink-0 text-blue-400" /><span className="truncate">{clientInfo[link.id]}</span></a> : <span className="text-slate-400 font-normal">未設定</span>}
+                                                            </div>
+                                                            <span className="text-xs font-normal text-slate-600 bg-white shadow-sm border border-slate-200 py-0.5 px-2 flex items-center gap-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shrink-0"><Icon name="Edit3" size={12} /> 編集</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </Card>
+                                    </div>
 
                                     {/* Card 2: 契約情報 (Contracts) */}
                                     <Card className="p-5 border-slate-200 bg-white shadow-sm relative h-fit hover:shadow-md transition-shadow">
@@ -2463,12 +2506,12 @@
                             const dbImps = rawMetrics.filter(m => (m.fetched_date || "").startsWith(dbStr)).reduce((sum, m) => sum + (parseInt(m.impressions)||0), 0);
 
                             if (dbImps > 0 && yImps === 0) {
-                                alerts.push({ title: "配信停止の疑い", desc: "前々日まで配信されていましたが、前日の表示回数が0です。アカウント停止や残高不足の可能性があります。", link: "#" });
+                                alerts.push({ title: "配信停止の疑い", desc: "前々日まで配信されていましたが、前日の表示回数が0です。アカウント停止や残高不足の可能性があります。", link: "manual/a01-impression-zero.html" });
                             }
 
                             // 2. 計測・リンクエラー（5000円以上消化でCVゼロ）
                             if (spend >= 5000 && cvs === 0) {
-                                alerts.push({ title: "コンバージョン未発生", desc: "5,000円以上の費用が発生していますが、結果（CV）が0件です。タグの設定漏れやLPのリンク切れを直ちに確認してください。", link: "#" });
+                                alerts.push({ title: "コンバージョン未発生", desc: "5,000円以上の費用が発生していますが、結果（CV）が0件です。タグの設定漏れやLPのリンク切れを直ちに確認してください。", link: "manual/a02-cv-zero.html" });
                             }
 
                             // 3. 予算の異常消化（すでに予算の90%以上を消化）
@@ -2477,18 +2520,19 @@
                                 const expectedPace = today.getDate() / daysInMonth;
                                 const actualPace = spend / c.budget;
                                 if (actualPace >= 0.9 || (actualPace - expectedPace >= 0.3)) {
-                                    alerts.push({ title: "予算の異常消化", desc: "予算の消化ペースが異常に早い、またはすでに予算の上限に近づいています。日予算の設定ミスがないか確認してください。", link: "#" });
+                                    alerts.push({ title: "予算の異常消化", desc: "予算の消化ペースが異常に早い、またはすでに予算の上限に近づいています。日予算の設定ミスがないか確認してください。", link: "manual/a03-budget-over.html" });
                                 }
                             }
 
                             // 4. 限界CPAの突破（赤字ライン）
                             if (c.limit_cpa > 0 && cpa > c.limit_cpa) {
-                                alerts.push({ title: "限界CPAの超過", desc: `現在のCPA（${Math.floor(cpa).toLocaleString()}円）が、設定された限界CPA（${c.limit_cpa.toLocaleString()}円）を突破しています。配信の停止や入札の調整が必要です。`, link: "#" });
+                                alerts.push({ title: "限界CPAの超過", desc: `現在のCPA（${Math.floor(cpa).toLocaleString()}円）が、設定された限界CPA（${c.limit_cpa.toLocaleString()}円）を突破しています。配信の停止や入札の調整が必要です。`, link: "manual/a04-cpa-over.html" });
                             }
 
                             return {
                                 id: c.id, name: c.name, assignee: c.assignee, clientContactName: c.client_contact_name, status: autoStatus,
                                 budget: c.budget || 0, targetCpa: c.target_cpa || 0, limitCpa: c.limit_cpa || 0, plan: c.plan, contractDate: c.contract_date, viewPassword: c.view_password,
+                                chatworkGroupId: c.chatwork_group_id, internalLarkUrl: c.internal_lark_url, metaAdManagerUrl: c.meta_ad_manager_url, googleAdManagerUrl: c.google_ad_manager_url,
                                 representativeName: c.representative_name, metaPlan: c.meta_plan, googlePlan: c.google_plan, lpVendor: c.lp_vendor, specialNotes: c.special_notes,
                                 businessDetails: c.business_details, serviceDetails: c.service_details, hearingNotes: c.hearing_notes, mainServices: c.main_services,
                                 urlLp1: c.url_lp1, urlLp2: c.url_lp2, urlLp3: c.url_lp3, urlWeb1: c.url_web1, urlWeb2: c.url_web2, urlWeb3: c.url_web3,
@@ -2681,6 +2725,10 @@
                         google_plan: getVal(info.googleAdPlan, updatedClient.googlePlan),
                         lp_vendor: getVal(info.lpCreator, updatedClient.lpVendor),
                         special_notes: getVal(info.contractNotes, updatedClient.specialNotes),
+                        chatwork_group_id: getVal(info.chatworkGroupId, updatedClient.chatworkGroupId),
+                        internal_lark_url: getVal(info.internalLarkUrl, updatedClient.internalLarkUrl),
+                        meta_ad_manager_url: getVal(info.metaAdManagerUrl, updatedClient.metaAdManagerUrl),
+                        google_ad_manager_url: getVal(info.googleAdManagerUrl, updatedClient.googleAdManagerUrl),
 
                         business_details: getVal(info.businessDetails, updatedClient.businessDetails),
                         service_details: getVal(info.serviceDetails, updatedClient.serviceDetails),

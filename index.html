@@ -1003,8 +1003,8 @@
 
                     rows.push(
                         <tr key={item.id} className={`border-b border-border transition-colors cursor-pointer ${rowBgClass}`} onClick={() => hasChildren && toggleExpand(item.id)}>
-                            <td className={`p-3 align-middle font-medium ${indentClass}`}>
-                                <div className="flex items-center gap-2">
+                            <td className={`p-3 align-middle font-medium max-w-[200px] sm:max-w-[300px] md:max-w-[400px] lg:max-w-[500px] ${indentClass}`}>
+                                <div className="flex items-center gap-2 w-full">
                                     {hasChildren ? (
                                         <button className="p-1 rounded-md hover:bg-slate-200 transition-colors text-slate-500 shrink-0">
                                             <Icon name="ChevronRight" size={16} className={`transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} />
@@ -1017,7 +1017,7 @@
                                     ) : (
                                         <Icon name={item.level === 0 ? 'Layers' : item.level === 1 ? 'Folder' : item.level === 2 ? 'FolderOpen' : 'LayoutTemplate'} size={14} className="text-indigo-400 shrink-0" />
                                     )}
-                                    <span className={`truncate ${item.level === 0 ? 'text-slate-900 font-bold' : 'text-slate-700'}`}>{item.name}</span>
+                                    <span title={item.name} className={`truncate block ${item.level === 0 ? 'text-slate-900 font-bold' : 'text-slate-700'}`}>{item.name}</span>
                                     {item.level === 3 && item.link_url && (
                                         <a href={item.link_url} target="_blank" onClick={(e) => e.stopPropagation()} className="text-blue-500 hover:text-blue-700 ml-1 shrink-0 flex items-center">
                                             <Icon name="ExternalLink" size={14} />

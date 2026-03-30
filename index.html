@@ -735,7 +735,7 @@ ${JSON.stringify(adsData, null, 2)}
 （結果を踏まえ、具体的に「どんな訴求」や「どんなビジュアル」のバナー/動画を新しく制作・テストすべきか、3つ提案してください）`;
 
                 try {
-                    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + geminiApiKey, {
+                    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + geminiApiKey, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt + "\n\n" + userQuery }] }] })
@@ -1361,8 +1361,17 @@ ${JSON.stringify(adsData, null, 2)}
                                 </div>
                                 
                                 {analysisResult && (
-                                    <Card className="p-8 bg-gradient-to-br from-indigo-50/30 to-slate-50 border-indigo-100 shadow-inner animate-in fade-in slide-in-from-top-4 duration-500">
-                                        <div className="text-sm text-slate-800 whitespace-pre-wrap leading-[1.9] font-medium tracking-wide prose max-w-none">
+                                    <Card className="mt-6 p-8 bg-gradient-to-br from-indigo-50/50 via-white to-slate-50 border-indigo-100 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+                                        <div className="flex items-center gap-3 mb-6 pb-4 border-b border-indigo-100/80">
+                                            <div className="bg-indigo-100 p-2 rounded-lg">
+                                                <Icon name="Sparkles" size={24} className="text-indigo-600" />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-bold text-slate-800 tracking-tight">プロのマーケターによる分析レポート</h3>
+                                                <p className="text-xs text-slate-500 mt-0.5">※対象期間のデータに基づく自動生成</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-sm text-slate-800 whitespace-pre-wrap leading-[1.9] font-medium tracking-wide prose prose-indigo max-w-none">
                                             {analysisResult}
                                         </div>
                                     </Card>

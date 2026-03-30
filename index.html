@@ -500,6 +500,16 @@
             const [customStartDate, setCustomStartDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
             const [customEndDate, setCustomEndDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
             const [previewMedia, setPreviewMedia] = useState(null);
+            
+            const [isAnalyzing, setIsAnalyzing] = useState(false);
+            const [analysisResult, setAnalysisResult] = useState("");
+            const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('gemini_api_key') || "");
+
+            const handleSaveApiKey = (e) => {
+                const key = e.target.value;
+                setGeminiApiKey(key);
+                localStorage.setItem('gemini_api_key', key);
+            };
 
             const data = useMemo(() => {
                 const now = new Date();
@@ -657,6 +667,88 @@
                     }
                 ];
             }, [client.rawMetrics, client.status, dateRange, customStartDate, customEndDate]);
+
+            const adsData = useMemo(() => {
+                const raw = client.rawMetrics || [];
+                const adGroups = raw.reduce((acc, m) => {
+                    const name = m.ad_name || "不明な広告";
+                    if (!acc[name]) acc[name] = { name, spend: 0, cv: 0, imps: 0, clicks: 0 };
+                    acc[name].spend += parseFloat(m.spend) || 0;
+                    acc[name].cv += parseFloat(m.conversions) || 0;
+                    acc[name].imps += parseInt(m.impressions) || 0;
+                    acc[name].clicks += parseInt(m.clicks) || 0;
+                    return acc;
+                }, {});
+
+                return Object.values(adGroups).map(a => {
+                    const ctr = a.imps > 0 ? ((a.clicks / a.imps) * 100).toFixed(2) : "0.00";
+                    return {
+                        "広告名": a.name,
+                        "消化額": a.spend,
+                        "獲得数": a.cv,
+                        "獲得単価(CPA)": a.cv > 0 ? Math.floor(a.spend / a.cv) : 0,
+                        "クリック率(CTR)": `${ctr}%`
+                    };
+                });
+            }, [client.rawMetrics]);
+
+            const handleAnalyze = async () => {
+                if (!geminiApiKey) {
+                    alert("Gemini APIキーを入力してください。");
+                    return;
+                }
+                setIsAnalyzing(true);
+                setAnalysisResult("");
+
+                const systemPrompt = `あなたは美容サロン（アイサロン、エステ、整骨院など）の集客を専門とする、実力派のWEB広告マーケター兼クリエイティブディレクターです。
+サロンオーナー様に対し、対象月の広告成果と、具体的なクリエイティブ（画像・動画）の勝敗判定、および次月の改善案を報告するレポートを作成してください。
+
+【報告の際の鉄則】
+1. AIが作成したとは絶対に悟らせないでください。あなたが直接データを読み込み、プロの経験に基づいて執筆している体裁を貫いてください。
+2. 専門用語は極力避け、直感的に理解できる言葉（例：CPA→予約獲得単価、CTR→リンククリック率）を使用してください。
+3. 数値の羅列ではなく、その数字が「何を意味しているのか」という仮説と、次に何をすべきかの「行動」に重点を置いてください。
+4. 丁寧語で、誠実さと自信を感じさせるトーンを維持してください。`;
+
+                const userQuery = `以下の【広告データ】を分析し、【出力フォーマット】に従って詳細なレポートを作成してください。
+
+---
+【広告データ】
+・クライアント名：${client.name}
+・正式法人名：${client.companyName || '未設定'}
+・限界CPA（赤字ライン）：${client.limitCpa > 0 ? client.limitCpa.toLocaleString() + '円' : '未設定'}
+
+【クリエイティブ別詳細データ（JSON）】
+${JSON.stringify(adsData, null, 2)}
+---
+
+【出力フォーマット】
+■ 1. 期間内の全体概況
+（消化金額、獲得数、獲得単価、クリック率のサマリーを記載。目標や限界CPAと比較して、成功だったのか改善が必要か総括してください）
+
+■ 2. クリエイティブの勝敗判定と運用判断
+【勝ちクリエイティブ（継続・強化）】
+（獲得単価が安く、反応が良かったものを特定し、なぜ当たったのかの理由と今後の展開案を提示）
+【負けクリエイティブ（停止・改善）】
+（獲得単価が高すぎる、またはクリック率が低すぎるものを特定し、停止すべき理由や修正ポイントを提示）
+
+■ 3. 次回のクリエイティブの方向性
+（結果を踏まえ、具体的に「どんな訴求」や「どんなビジュアル」のバナー/動画を新しく制作・テストすべきか、3つ提案してください）`;
+
+                try {
+                    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + geminiApiKey, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: systemPrompt + "\n\n" + userQuery }] }] })
+                    });
+                    const json = await res.json();
+                    if (json.error) throw new Error(json.error.message);
+                    setAnalysisResult(json.candidates[0].content.parts[0].text);
+                } catch (err) {
+                    setAnalysisResult("分析中にエラーが発生しました: " + err.message);
+                } finally {
+                    setIsAnalyzing(false);
+                }
+            };
 
             // Supabase states
             const [dbHistoryLogs, setDbHistoryLogs] = useState([]);
@@ -1241,6 +1333,42 @@
                     {/* タブコンテンツ: ダッシュボード */}
                     {activeTab === 'dashboard' && (
                         <div className="space-y-6 animate-in fade-in duration-300">
+                            <div className="space-y-4 mb-8">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-3">
+                                    <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                                        <Icon name="FileText" size={22} className="text-indigo-600" /> クリエイティブ分析レポート生成
+                                    </h3>
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <div className="relative">
+                                            <Icon name="Key" size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                                            <input 
+                                                type="password" 
+                                                placeholder="Gemini API Key" 
+                                                value={geminiApiKey} 
+                                                onChange={handleSaveApiKey} 
+                                                className="text-xs pl-8 pr-3 py-2 border border-slate-200 rounded-md focus:border-indigo-500 outline-none w-48 shadow-sm font-mono" 
+                                            />
+                                        </div>
+                                        <button 
+                                            onClick={handleAnalyze} 
+                                            disabled={isAnalyzing} 
+                                            className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-all disabled:opacity-50 flex items-center gap-2"
+                                        >
+                                            {isAnalyzing ? <Icon name="Loader" size={16} className="animate-spin" /> : <Icon name="Play" size={16} />}
+                                            {isAnalyzing ? "データを分析中..." : "レポートを生成する"}
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {analysisResult && (
+                                    <Card className="p-8 bg-gradient-to-br from-indigo-50/30 to-slate-50 border-indigo-100 shadow-inner animate-in fade-in slide-in-from-top-4 duration-500">
+                                        <div className="text-sm text-slate-800 whitespace-pre-wrap leading-[1.9] font-medium tracking-wide prose max-w-none">
+                                            {analysisResult}
+                                        </div>
+                                    </Card>
+                                )}
+                            </div>
+
                             <Card className="overflow-hidden shadow-sm border-slate-200">
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm text-left whitespace-nowrap">

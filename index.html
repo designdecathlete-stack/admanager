@@ -250,8 +250,9 @@
             const [search, setSearch] = useState("");
             const [assigneeFilter, setAssigneeFilter] = useState("all");
             const [dateRange, setDateRange] = useState("this_month");
+            const [customStartDate, setCustomStartDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
+            const [customEndDate, setCustomEndDate] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; });
             const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
-            const [editingInput, setEditingInput] = useState({ id: null, field: null, value: "" });
 
 
             const handleSort = (key) => setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
@@ -279,6 +280,21 @@
                 startDate = new Date();
                 startDate.setDate(now.getDate() - 7);
                 startDate.setHours(0, 0, 0, 0);
+            } else if (dateRange === 'yesterday') {
+                startDate = new Date();
+                startDate.setDate(now.getDate() - 1);
+                startDate.setHours(0, 0, 0, 0);
+                endDate = new Date(startDate);
+                endDate.setHours(23, 59, 59, 999);
+            } else if (dateRange === 'last_30') {
+                startDate = new Date();
+                startDate.setDate(now.getDate() - 30);
+                startDate.setHours(0, 0, 0, 0);
+            } else if (dateRange === 'custom') {
+                startDate = new Date(customStartDate);
+                startDate.setHours(0, 0, 0, 0);
+                endDate = new Date(customEndDate);
+                endDate.setHours(23, 59, 59, 999);
             }
 
             const enriched = clients.map(c => {
@@ -324,8 +340,20 @@
                         <h2 className="text-2xl font-bold tracking-tight text-slate-900">クライアント一覧</h2>
                         <div className="flex flex-wrap items-center gap-3">
                             <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} className="pl-3 pr-8 py-2 border border-slate-200 rounded-md text-sm focus:outline-none focus:border-primary appearance-none bg-white font-medium cursor-pointer shadow-sm">
-                                <option value="this_month">今月</option><option value="last_month">先月</option><option value="last_7">過去7日間</option>
+                                <option value="yesterday">昨日</option>
+                                <option value="last_7">過去7日間</option>
+                                <option value="last_30">過去30日間</option>
+                                <option value="this_month">今月</option>
+                                <option value="last_month">先月</option>
+                                <option value="custom">カスタム指定</option>
                             </select>
+                            {dateRange === 'custom' && (
+                                <div className="flex items-center gap-2 animate-in slide-in-from-left-2 duration-300">
+                                    <input type="date" value={customStartDate} onChange={e => setCustomStartDate(e.target.value)} className="bg-white border border-slate-200 rounded-md shadow-sm px-3 py-2 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer hover:bg-slate-50 transition-colors" />
+                                    <span className="text-slate-400 font-medium">〜</span>
+                                    <input type="date" value={customEndDate} onChange={e => setCustomEndDate(e.target.value)} className="bg-white border border-slate-200 rounded-md shadow-sm px-3 py-2 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer hover:bg-slate-50 transition-colors" />
+                                </div>
+                            )}
                             <div className="relative border border-slate-200 rounded-md shadow-sm">
                                 <select value={assigneeFilter} onChange={(e) => setAssigneeFilter(e.target.value)} className="pl-3 pr-8 py-2 w-full text-sm block appearance-none bg-white rounded-md focus:outline-none focus:border-primary font-medium text-slate-700 cursor-pointer">
                                     <option value="all">全担当者</option>

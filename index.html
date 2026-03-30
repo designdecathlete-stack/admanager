@@ -2731,6 +2731,8 @@
                     };
 
                     const updateData = {
+                        group_name: getVal(info.groupName, updatedClient.groupName),
+                        company_name: getVal(info.companyName, updatedClient.companyName),
                         name: updatedClient.name !== "" && updatedClient.name !== undefined ? updatedClient.name : null,
                         assignee: updatedClient.assignee !== undefined ? updatedClient.assignee : null,
                         client_contact_name: getVal(info.clientContactName, updatedClient.clientContactName),

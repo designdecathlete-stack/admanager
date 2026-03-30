@@ -178,7 +178,7 @@
 
 
         const AddClientForm = ({ onSave, onCancel, teamMembers }) => {
-            const [formData, setFormData] = useState({ name: "", adAccountId: "", assignee: "", plan: "スタンダード", contractDate: "", view_password: "" });
+            const [formData, setFormData] = useState({ name: "", adAccountId: "", assignee: "", representativeName: "", plan: "スタンダード", contractDate: "", view_password: "" });
             const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
             const handleSubmit = (e) => {
                 e.preventDefault();
@@ -199,8 +199,12 @@
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="space-y-2"><label className="text-sm font-medium text-slate-700">クライアント名 <span className="text-red-500">*</span></label><input required name="name" value={formData.name} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm" placeholder="株式会社〇〇" /></div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-700">代表者名（担当者名）</label>
-                                    <select name="assignee" value={formData.assignee} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm bg-white">
+                                    <label className="text-sm font-medium text-slate-700">代表者名（クライアント側）</label>
+                                    <input type="text" name="representativeName" value={formData.representativeName || ''} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm" placeholder="例: 山田 太郎" />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-slate-700">運用担当者（社内）</label>
+                                    <select name="assignee" value={formData.assignee || ''} onChange={handleChange} className="w-full px-3 py-2 border border-slate-200 rounded-md text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all shadow-sm bg-white cursor-pointer">
                                         <option value="">未設定</option>
                                         {teamMembers && teamMembers.map(member => (
                                             <option key={member.name} value={member.name}>{member.name}</option>
@@ -2554,6 +2558,7 @@
                     const dbData = {
                         name: newClient.name,
                         assignee: newClient.assignee,
+                        representative_name: newClient.representativeName || null,
                         plan: newClient.plan,
                         contract_date: newClient.contractDate || null,
                         view_password: newClient.view_password || null,

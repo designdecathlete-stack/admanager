@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【A02】コンバージョン未発生（CVゼロ）の対応手順 - AdManager Manual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>body { font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; }</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased leading-relaxed">
+    <header class="bg-slate-900 text-white py-4 shadow-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-6 flex items-center justify-between">
+            <div class="font-bold tracking-wider flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
+                AdManager マニュアル
+            </div>
+            <a href="../index.html" class="text-xs bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded transition-colors">ダッシュボードへ戻る</a>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 py-10 space-y-12">
+        <div>
+            <div class="inline-block bg-orange-100 text-orange-700 font-bold px-3 py-1 rounded-full text-xs mb-3 border border-orange-200">緊急度：高 (Aランク)</div>
+            <h1 class="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-4">【A02】コンバージョン未発生（CVゼロ）の対応手順</h1>
+        </div>
+
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">🚨 1. このアラートが意味すること</h2>
+            <p class="mb-4">5,000円以上の費用が発生している（広告は正常にクリックされている）にも関わらず、管理画面上で結果（CV）が1件も計測されていません。</p>
+            <div class="bg-red-50 border-l-4 border-red-500 p-4 text-red-800 font-medium rounded-r text-sm">
+                大半のケースにおいて、<strong>「GTM（Google Tag Manager）の設定ミス」</strong>または<strong>「Meta Pixelの設置漏れ・剥がれ」</strong>による計測エラーが原因です。実際の予約は入っているのに計測できていないだけの可能性が高いため、直ちにタグの動作確認が必要です。
+            </div>
+        </section>
+
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">🔍 2. 対応フロー（GTM担当へのエスカレーション）</h2>
+            <div class="space-y-4">
+                <div class="border border-blue-100 p-4 rounded-md space-y-3">
+                    <p class="text-sm font-medium text-slate-700">運用担当者側で管理画面をこねくり回す必要はありません。タグの不具合が濃厚なため、以下の手順で直ちに専門の担当者へ調査を引き継ぎます。</p>
+                    <div class="bg-slate-50 p-4 rounded text-sm space-y-2">
+                        <div class="flex items-start gap-2">
+                            <span class="bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded text-xs">STEP 1</span>
+                            <span>対象クライアントの「LPのURL」または「予約ページのURL」をAdManagerのアカウント情報からコピーする。</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded text-xs">STEP 2</span>
+                            <span>社内チャット（Chatwork/Slack等）にて、<strong>GTM担当の長澤さん</strong>宛に調査依頼のメッセージを送信する（下部のテンプレートを使用）。</span>
+                        </div>
+                        <div class="flex items-start gap-2">
+                            <span class="bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded text-xs">STEP 3</span>
+                            <span>AdManagerの「変更履歴・ログ」タブに『CV計測エラー疑いのため、長澤さんへGTM調査依頼済み』と記録を残す。</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section class="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4 border-b border-slate-100 pb-3">📱 3. 長澤さんへの調査依頼テンプレート</h2>
+            <p class="mb-4 text-sm text-slate-600">以下のテキストをコピーし、対象クライアント名を書き換えて長澤さんへ送信してください。</p>
+            <pre class="bg-slate-800 text-slate-100 p-5 rounded-lg text-sm md:text-base font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">長澤さん
+お疲れ様です。
+
+AdManagerにて、以下のクライアントで「費用が発生しているがCVが0件」のアラートを検知しました。
+GTMの設定漏れ、もしくはPixelの発火エラーの可能性が高いため、計測状況の調査と修正をお願いできますでしょうか。
+
+■ 対象クライアント：【ここにクライアント名を入力】
+■ 該当LP/予約ページURL：【ここにURLを入力】
+■ 媒体：【Meta広告 / Google広告】
+
+お手数ですが、修正が完了しましたらこちらにご返信いただけますと幸いです。
+よろしくお願いいたします。</pre>
+        </section>
+    </main>
+</body>
+</html>
